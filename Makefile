@@ -20,6 +20,7 @@ help:
 	@echo "Please use \`make <target>' where <target> is one of"
 	@echo "  build                                           to build Docker containers"
 	@echo "  checkmigrations                                 to check migrations"
+	@echo "  createsuperuser                                 to create super user"
 	@echo "  dump                                            to create database dump"
 	@echo "  linter                                          to run linter"
 	@echo "  load                                            to load fixtures"
@@ -28,24 +29,19 @@ help:
 	@echo "  namedmigrations MIGRATION_NAME=<name>           to create migration file with a specific name"
 	@echo "  rollback APP=<app_name> MIGRATION_NUM=<number>  to reverse migrations"
 	@echo "  rollbacktozero APP=<app_name>                   to rollback to initial migration"
-	@echo "  runserver                                       to run Django server"
 	@echo "  startapp APP=<app_name>                         to create a Django app"
 	@echo "  stop                                            to stop Docker containers"
 	@echo "  testall                                         to run all tests"
 	@echo "  testapp APP=<app_name> TAG=<tag>                to run app tests with a tag"
 
 
+
 # -------------- SETUP --------------
 
-# Set up virtual environment and activate it (python3.12):
+# For `poetry add` command
+# Set up virtual environment and activate it:
 # python3.12 -m venv .venv
 # source .venv/bin/activate
-
-
-# Run Django server
-.PHONY: runserver
-runserver:
-	$(MANAGE) runserver
 
 
 # -------------- DOCKER --------------
@@ -60,14 +56,24 @@ build:
 stop:
 	$(DOCKER_COMPOSE) $(DOCKER_PROFILE) down
 
+# Enter backend container
+.PHONY: entercontainer
+entercontainer:
+	docker exec -it $(APP_NAME)_backend sh
+
 
 # -------------- DJANGO --------------
 
 # Start an app
-# Example: make startapp APP=marketplace
+# Example: make startapp APP=restaurant
 .PHONY: startapp
 startapp:
 	$(MANAGE) startapp $(APP)
+
+# Creates superuser
+.PHONY: createsuperuser
+createsuperuser:
+	$(DOCKER_EXEC) $(MANAGE) createsuperuser --noinput
 
 
 # -------------- MIGRATIONS --------------
@@ -75,36 +81,35 @@ startapp:
 # Dry-run migrations
 .PHONY: checkmigrations
 checkmigrations:
-	$(MANAGE) makemigrations --check --dry-run
+	$(DOCKER_EXEC) $(MANAGE) makemigrations --check --dry-run --settings=core.settings.$(ENV)
 
 # Create migration file with a default name
 .PHONY: migrations
 migrations:
-	$(MANAGE) makemigrations
+	$(DOCKER_EXEC) $(MANAGE) makemigrations --settings=core.settings.$(ENV)
 
 # Create migration file with a specific name
 # Example: make namedmigrations MIGRATION_NAME=alter_visa_category_origins
 .PHONY: namedmigrations
 namedmigrations:
-	$(MANAGE) makemigrations --name $(MIGRATION_NAME)
+	$(DOCKER_EXEC) $(MANAGE) makemigrations --name $(MIGRATION_NAME) --settings=core.settings.$(ENV)
 
 # Apply migrations
 .PHONY: migrate
 migrate:
-	$(MANAGE) migrate
+	$(DOCKER_EXEC) $(MANAGE) migrate --settings=core.settings.$(ENV)
 
 # Reverse migrations
-# Example: make rollback APP=visa MIGRATION_NUM=0124
+# Example: make rollback APP=restaurant MIGRATION_NUM=0124
 .PHONY: rollback
 rollback:
-	$(MANAGE) migrate $(APP) $(MIGRATION_NUM)
-
+	$(DOCKER_EXEC) $(MANAGE) migrate $(APP) $(MIGRATION_NUM) --settings=core.settings.$(ENV)
 
 # Delete all migrations
-# Example: make rollbacktozero APP=marketplace
+# Example: make rollbacktozero APP=restaurant
 .PHONY: rollbacktozero
 rollbacktozero:
-	$(MANAGE) migrate $(APP) zero
+	$(DOCKER_EXEC) $(MANAGE) migrate $(APP) zero --settings=core.settings.$(ENV)
 
 
 # -------------- LINTER --------------
@@ -112,7 +117,7 @@ rollbacktozero:
 # Run linter
 .PHONY: linter
 linter:
-	flake8 ./ --ignore="E121,E122,E126,E201,E226,E266,E402,E501,Q000" --exclude=".venv"
+	$(DOCKER_EXEC) poetry run flake8 ./ --ignore="E121,E122,E126,E201,E226,E266,E402,E501,Q000" --exclude=".venv"
 
 
 # -------------- TEST --------------
@@ -125,15 +130,15 @@ dump:
 # Load fixtures
 .PHONY: load
 load:
-	$(MANAGE) loaddata db_data.json
+	$(DOCKER_EXEC) $(MANAGE) loaddata db_data.json
 
 # Run all tests
 .PHONY: testall
 testall:
-	$(MANAGE) test
+	$(DOCKER_EXEC) $(MANAGE) test
 
 # Run app tests with a tag
-# Example: make testapp APP=api TAG=detail
+# Example: make testapp APP=restaurant TAG=detail
 .PHONY: testapp
 testapp:
-	$(MANAGE) test $(APP).tests --tag=$(TAG)
+	$(DOCKER_EXEC) $(MANAGE) test $(APP).tests --tag=$(TAG)
