@@ -1,5 +1,39 @@
-from .base import *
+from .base import *  # noqa
 
-from dotenv import find_dotenv, load_dotenv
+from dotenv import load_dotenv
+import environ
 
-load_dotenv(find_dotenv('/env/.env.local'))
+load_dotenv(BASE_DIR / 'env' / '.env.local')  # noqa
+
+env = environ.Env()
+ENV = env.str('ENV')
+VERSION = env.str('VERSION')
+APP_NAME = env.str('APP_NAME')
+
+SECRET_KEY = env.str('SECRET_KEY')
+DEBUG = env.str('DEBUG')
+ALLOWED_HOSTS = env.list('URLS')
+
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'NAME': env.str('POSTGRES_DB'),
+        'USER': env.str('POSTGRES_USER'),
+        'PASSWORD': env.str('POSTGRES_PASSWORD'),
+        'HOST': env.str('POSTGRES_HOST'),
+        'PORT': env.str('POSTGRES_PORT'),
+        'TEST': {
+            'ENGINE': 'django.db.backends.postgresql_psycopg2',
+            'NAME': env.str('POSTGRES_TEST_DB'),
+            'USER': env.str('POSTGRES_TEST_USER'),
+            'PASSWORD': env.str('POSTGRES_TEST_PASSWORD'),
+            'HOST': env.str('POSTGRES_TEST_HOST'),
+            'PORT': env.str('POSTGRES_TEST_PORT'),
+        },
+        'OPTIONS': {
+            'sslmode': env.str('DATABASE_SSLMODE', default='disable'),
+        },
+    }
+}
+
+TIME_ZONE = env.str('TZ')

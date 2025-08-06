@@ -1,21 +1,18 @@
 import os
 from pathlib import Path
 
-import environ
-
 # BASE
 
-env = environ.Env()
-ENV = env.str('ENV')
-VERSION = env.str('VERSION')
-APP_NAME = env.str('APP_NAME')
+ENV = 'local'
+VERSION = 'v0'
+APP_NAME = 'sampo'
 
 CORE_DIR = Path(__file__).resolve().parent
 BASE_DIR = CORE_DIR.parent.parent
 
-SECRET_KEY = env.str('SECRET_KEY')
-DEBUG = env.str('DEBUG')
-ALLOWED_HOSTS = env.list('URLS')
+SECRET_KEY = ''
+DEBUG = True
+ALLOWED_HOSTS = '0.0.0.0,127.0.0.1,localhost'
 
 ROOT_URLCONF = 'core.urls'
 
@@ -37,11 +34,12 @@ DJANGO_APPS = (
 
 EXTERNAL_APPS = (
     'corsheaders',
-    # 'django_elasticsearch_dsl',
+    'djmoney',
 )
 
 CUSTOM_APPS = (
     'restaurant',
+    'authentication',
 )
 
 INSTALLED_APPS = DJANGO_APPS + EXTERNAL_APPS + CUSTOM_APPS
@@ -97,11 +95,19 @@ MEDIA_URL = '/media/'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': env.str('POSTGRES_DB'),
-        'USER': env.str('POSTGRES_USER'),
-        'PASSWORD': env.str('POSTGRES_PASSWORD'),
-        'HOST': env.str('POSTGRES_HOST'),
-        'PORT': env.str('POSTGRES_PORT'),
+        'NAME': '',
+        'USER': '',
+        'PASSWORD': '',
+        'HOST': '',
+        'PORT': '',
+        'TEST': {
+            'ENGINE': 'django.db.backends.postgresql_psycopg2',
+            'NAME': '',
+            'USER': '',
+            'PASSWORD': '',
+            'HOST': '',
+            'PORT': '',
+        },
     }
 }
 
@@ -120,7 +126,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'ru-RU'
 
-TIME_ZONE = env.str('TZ')
+TIME_ZONE = ''
 
 USE_I18N = True
 

@@ -24,6 +24,7 @@ services:
     ports:
       - '8888:8000'
     volumes:
+      - ../:/home/app
       - static-volume:/home/app/staticfiles
     profiles: [main, secondary]
 
