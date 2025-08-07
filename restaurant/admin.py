@@ -1,6 +1,9 @@
+from typing import Any
+
 from django.contrib import admin
 from django.urls import reverse
 from django.utils.html import format_html
+from django.utils.safestring import SafeString
 
 import restaurant.models as models
 
@@ -46,6 +49,6 @@ class DishAdmin(admin.ModelAdmin):
     search_help_text = 'Поиск по полю «Название блюда»'
 
     @admin.display(description='Ресторан')
-    def restaurant_link(self, obj):
+    def restaurant_link(self, obj) -> Any | SafeString:
         url = reverse('admin:restaurant_restaurant_change', args=[obj.id])
         return format_html(f'<a href="{url}">{obj.restaurant}</a>')
