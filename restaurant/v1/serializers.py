@@ -1,7 +1,9 @@
-from typing import Any
+from decimal import Decimal
+from typing import Any, NoReturn
 
 from django.db import transaction
 from rest_framework import serializers
+from rest_framework.exceptions import NotFound, ErrorDetail
 
 import restaurant.models as models
 
@@ -12,10 +14,10 @@ class RestaurantSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.Restaurant
-        fields = ['id', 'name', 'category', 'city', 'address', 'phone_number', 'restaurant_url', 'menu_url', 'ranking']
+        fields = ('id', 'name', 'category', 'city', 'address', 'phone_number', 'restaurant_url', 'menu_url', 'ranking')
         validators = []  # turn off UniqueTogetherValidator
 
-    def validate_ranking(self, value):
+    def validate_ranking(self, value) -> NoReturn | float:
         if value not in range(0, 6):
             raise serializers.ValidationError('Ranking must be between 0 and 5')
         return value
@@ -58,12 +60,43 @@ class RestaurantSerializer(serializers.ModelSerializer):
 class RestaurantShortSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Restaurant
-        fields = ['id', 'name', 'address']
+        fields = ('id', 'name', 'address')
 
 
 class DishSerializer(serializers.ModelSerializer):
-    restaurant = RestaurantShortSerializer(read_only=True)
+    restaurant = serializers.IntegerField(source='restaurant.id')
+    price = serializers.SerializerMethodField(source='get_price')
 
     class Meta:
         model = models.Dish
-        fields = ['id', 'name', 'price', 'restaurant', 'weight_grams', 'quantity']
+        fields = ('id', 'name', 'price', 'restaurant', 'weight_grams', 'quantity')
+
+    def get_price(self, obj: models.Dish) -> dict[str, Decimal | str]:
+        return {'amount': obj.price.amount, 'currency': str(obj.price.currency)}
+
+    def create(self, validated_data: dict[str, Any]) -> models.Dish:
+        restaurant_id = validated_data.pop('restaurant').get('id')
+        try:
+            restaurant = models.Restaurant.objects.get(pk=restaurant_id)
+        except models.Restaurant.DoesNotExist:
+            raise NotFound({
+                'restaurant': ErrorDetail(f'Restaurant with ID={restaurant_id} was not found.', code='not_found')
+            })
+        return models.Dish.objects.create(restaurant=restaurant, **validated_data)
+
+    def update(self, instance: models.Dish, validated_data: dict[str, Any]) -> models.Dish:
+        restaurant_id = validated_data.pop('restaurant', {}).get('id')
+
+        if restaurant_id:
+            if restaurant := models.Restaurant.objects.filter(pk=restaurant_id).first():
+                instance.restaurant = restaurant
+            else:
+                raise NotFound({
+                    'restaurant': ErrorDetail(f'Restaurant with ID={restaurant_id} was not found.', code='not_found')
+                })
+
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+
+        instance.save()
+        return instance

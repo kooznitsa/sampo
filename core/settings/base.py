@@ -34,6 +34,7 @@ DJANGO_APPS = (
 
 EXTERNAL_APPS = (
     'corsheaders',
+    'rest_framework',
     'djmoney',
     'drf_spectacular',
     'drf_standardized_errors',
