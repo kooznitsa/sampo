@@ -12,7 +12,7 @@ class Category(models.Model):
         verbose_name = 'Категория'
         verbose_name_plural = 'Категории'
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.name
 
 
@@ -23,7 +23,7 @@ class City(models.Model):
         verbose_name = 'Город'
         verbose_name_plural = 'Города'
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.name
 
 
@@ -34,7 +34,7 @@ class Tag(models.Model):
         verbose_name = 'Тег'
         verbose_name_plural = 'Теги'
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.name
 
 
@@ -54,7 +54,7 @@ class Restaurant(DateTimeMixin):
         verbose_name_plural = 'Рестораны'
         unique_together = [['name', 'address']]
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.name
 
 
@@ -71,5 +71,5 @@ class Dish(DateTimeMixin):
         verbose_name = 'Блюдо'
         verbose_name_plural = 'Блюда'
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.name

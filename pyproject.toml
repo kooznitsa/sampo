@@ -16,7 +16,9 @@ dependencies = [
     "psycopg2-binary (>=2.9.10,<3.0.0)",
     "python-dotenv (>=1.1.1,<2.0.0)",
     "django-money (>=3.5.4,<4.0.0)",
-    "flake8 (>=7.3.0,<8.0.0)"
+    "flake8 (>=7.3.0,<8.0.0)",
+    "drf-standardized-errors[openapi] (>=0.15.0,<0.16.0)",
+    "django-filter (>=25.1,<26.0)",
 ]
 
 
