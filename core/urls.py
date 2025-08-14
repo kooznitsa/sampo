@@ -6,8 +6,12 @@ from django.urls import include, path
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView, SpectacularRedocView
 
 urlpatterns = [
+    # -------------------------- Admin ---------------------------------
     path('admin/', admin.site.urls),
+
+    # -------------------------- Apps ---------------------------------
     path('api/v1/', include('restaurant.v1.urls')),
+    path('api/v1/', include('authentication.v1.urls')),
 
     # -------------------------- Swagger ---------------------------------
     path('api/v1/swagger_yml/', SpectacularAPIView.as_view(api_version='v1'), name='schema-v1'),

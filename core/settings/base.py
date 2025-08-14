@@ -1,3 +1,4 @@
+from datetime import timedelta
 import os
 from pathlib import Path
 
@@ -39,6 +40,7 @@ EXTERNAL_APPS = (
     'drf_spectacular',
     'drf_standardized_errors',
     'django_filters',
+    'rest_framework_simplejwt',
 )
 
 CUSTOM_APPS = (
@@ -214,6 +216,25 @@ REST_FRAMEWORK = {
     'PAGE_SIZE': 100,
     'EXCEPTION_HANDLER': 'drf_standardized_errors.handler.exception_handler',
     'DEFAULT_FILTER_BACKENDS': ['django_filters.rest_framework.DjangoFilterBackend'],
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ),
+}
+
+
+# JWT
+
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(days=1),
+    'REFRESH_TOKEN_LIFETIME': timedelta(weeks=4),
+    'ROTATE_REFRESH_TOKENS': True,
+    'BLACKLIST_AFTER_ROTATION': True,
+    'ALGORITHM': 'HS256',
+    'SIGNING_KEY': SECRET_KEY,
+    'VERIFYING_KEY': None,
+    'AUTH_HEADER_TYPES': ('Bearer',),
+    'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
+    'TOKEN_TYPE_CLAIM': 'token_type',
 }
 
 
@@ -231,8 +252,8 @@ SPECTACULAR_SETTINGS = {
     'LICENSE': {'name': 'BSD License'},
     'SERVE_PUBLIC': True,
     'SERVE_PERMISSIONS': ['rest_framework.permissions.AllowAny'],
-    'SCHEMA_PATH_PREFIX': r'^v\d+',
-    'SCHEMA_PATH_PREFIX_TRIM': True,
+    'SCHEMA_PATH_PREFIX': r'/api/v\d+/',
+    'SCHEMA_PATH_PREFIX_TRIM': False,
     'CAMELIZE_NAMES': True,
     'ENUM_NAME_OVERRIDES': {
         'ValidationErrorEnum': 'drf_standardized_errors.openapi_serializers.ValidationErrorEnum.choices',
