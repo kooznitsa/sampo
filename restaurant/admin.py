@@ -49,6 +49,6 @@ class DishAdmin(admin.ModelAdmin):
     search_help_text = 'Поиск по полю «Название блюда»'
 
     @admin.display(description='Ресторан')
-    def restaurant_link(self, obj) -> Any | SafeString:
+    def restaurant_link(self, obj: models.Dish) -> Any | SafeString:
         url = reverse('admin:restaurant_restaurant_change', args=[obj.id])
         return format_html(f'<a href="{url}">{obj.restaurant}</a>')

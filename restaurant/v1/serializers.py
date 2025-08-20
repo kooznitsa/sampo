@@ -1,6 +1,7 @@
-from typing import Any, TypeVar
+from decimal import Decimal
+from typing import Any
 
-from django.db import models as django_models, transaction
+from django.db import transaction
 
 from djmoney.money import Money
 from rest_framework import serializers
@@ -8,11 +9,9 @@ from rest_framework.relations import SlugRelatedField
 
 import restaurant.models as models
 
-_T = TypeVar('_T', bound=django_models.Model)
-
 
 class MoneyField(serializers.Field):
-    def to_representation(self, value: Money) -> dict[str, str | float]:
+    def to_representation(self, value: Money) -> dict[str, str | Decimal]:
         return {'amount': value.amount, 'currency': str(value.currency)}
 
     def to_internal_value(self, data: dict[str, str | float]) -> Money:
@@ -25,7 +24,7 @@ class MoneyField(serializers.Field):
 class SlugRelatedFieldWithCreate(SlugRelatedField):
     """SlugRelatedField that finds object by its slug or creates it.
     """
-    def to_internal_value(self, data: Any) -> _T:
+    def to_internal_value(self, data: Any) -> Any:
         queryset = self.get_queryset()
         obj, created = queryset.get_or_create(**{self.slug_field: str(data)})
         return obj
@@ -41,11 +40,11 @@ class RestaurantSerializer(serializers.ModelSerializer):
         fields = ('id', 'name', 'category', 'city', 'address', 'phone_number', 'restaurant_url', 'menu_url', 'ranking')
 
     @transaction.atomic
-    def create(self, validated_data) -> models.Restaurant:
+    def create(self, validated_data: dict) -> models.Restaurant:
         return models.Restaurant.objects.create(**validated_data)
 
     @transaction.atomic
-    def update(self, instance, validated_data) -> models.Restaurant:
+    def update(self, instance: models.Restaurant, validated_data: dict) -> models.Restaurant:
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
         instance.save()
