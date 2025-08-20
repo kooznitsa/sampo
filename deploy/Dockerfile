@@ -8,7 +8,8 @@ WORKDIR /home/app
 
 COPY ../pyproject.toml ../poetry.lock* ./
 
-RUN pip install poetry --with dev --no-root
+RUN pip install poetry
+RUN poetry install --with dev --no-root
 # For production:
 # RUN poetry install --without dev --no-root
 RUN poetry config virtualenvs.create false
