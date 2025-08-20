@@ -24,7 +24,7 @@ jobs:
       - name: Run containers
         run: make build
 
-      - name: Run linter (inside Docker)
+      - name: Run linter
         run: make linter
 
       # --- Separate step for mypy ---
@@ -37,7 +37,7 @@ jobs:
         run: pip install poetry
 
       - name: Install dependencies
-        run: poetry install --only main,dev
+        run: poetry install --only main,dev --no-root
 
-      - name: Run mypy (outside Docker)
+      - name: Run mypy
         run: make mypyapp-ci APP=restaurant
