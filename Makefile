@@ -126,11 +126,11 @@ linter:
 mypy:
 	$(DOCKER_EXEC) poetry run mypy .
 
-# Check app typing
-# Example: make mypyapp; make mypyapp APP=restaurant
-.PHONY: mypyapp
-mypyapp:
-	$(DOCKER_EXEC) poetry run mypy $(APP)
+# Check app typing in CI
+# Example: make mypyapp-ci; make mypyapp-ci APP=restaurant
+.PHONY: mypyapp-ci
+mypyapp-ci:
+	poetry run mypy $(APP) --no-incremental
 
 
 # -------------- TEST --------------

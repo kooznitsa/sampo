@@ -8,7 +8,8 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
+
     steps:
       - uses: actions/checkout@v4
 
@@ -23,8 +24,20 @@ jobs:
       - name: Run containers
         run: make build
 
-      - name: Run linter
+      - name: Run linter (inside Docker)
         run: make linter
 
-      - name: Check restaurant typing
-        run: make mypyapp APP=restaurant
+      # --- Separate step for mypy ---
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Poetry
+        run: pip install poetry
+
+      - name: Install dependencies
+        run: poetry install --only main,dev
+
+      - name: Run mypy (outside Docker)
+        run: make mypyapp-ci APP=restaurant
