@@ -124,7 +124,7 @@ linter:
 # Check typing
 .PHONY: mypy
 mypy:
-	poetry run mypy .
+	$(DOCKER_EXEC) poetry run mypy .
 
 
 # -------------- TEST --------------
