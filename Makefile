@@ -7,7 +7,7 @@ MANAGE = poetry run python manage.py
 
 LOCALE ?= 'ru'
 TAG ?= 'list'
-APP ?= 'restaurant'
+APP ?= restaurant
 MIGRATION_NAME ?= ''
 MIGRATION_NUM ?= ''
 

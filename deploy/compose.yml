@@ -8,6 +8,7 @@ services:
     <<: *app-main
     build:
       context: ../
+      target: dev
       dockerfile: deploy/Dockerfile
     hostname: backend
     container_name: ${APP_NAME}_backend
