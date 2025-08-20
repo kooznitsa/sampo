@@ -12,7 +12,7 @@ load_dotenv()
 class Command(BaseCommand):
     help = 'Creates superuser with default username and password set in .env.${ENV} file.'
 
-    def handle(self, *args, **options):
+    def handle(self, *args: dict, **options: dict) -> None:
         username = os.environ.get('DJANGO_SUPERUSER_USERNAME', default='admin')
         password = os.environ.get('DJANGO_SUPERUSER_PASSWORD', default='admin')
         try:

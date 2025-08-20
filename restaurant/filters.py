@@ -1,5 +1,7 @@
 from typing import NoReturn
 
+from django.db.models import QuerySet
+
 import django_filters
 from rest_framework.exceptions import NotFound
 
@@ -13,7 +15,7 @@ class DishFilterSet(django_filters.FilterSet):
         model = models.Dish
         fields = ['restaurant']
 
-    def filter_restaurant(self, queryset, name: str, value: int) -> models.Dish | NoReturn:
+    def filter_restaurant(self, queryset: QuerySet, name: str, value: int) -> models.Dish | NoReturn:
         if not models.Restaurant.objects.filter(pk=value).exists():
             raise NotFound(detail=f'Restaurant with id={value} was not found')
         return queryset.filter(restaurant_id=value)
