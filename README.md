@@ -7,11 +7,22 @@
 
 ## Переменные окружения
 
-ENV = local | test | staging | prod
+ENV = local | dev | staging | prod
 
 - Переменные окружения: /env/.env.$(ENV)
 - Специфичные для окружения настройки: /core/settings/$(ENV).py
 - Makefile: include ./env/.env.$(ENV)
+
+Для прода заменить dev в compose.yml на prod:
+
+```yml
+services:
+  backend:
+    <<: *app-main
+    build:
+      context: ../
+      target: dev
+```
 
 ## Запуск проекта
 

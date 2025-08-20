@@ -7,7 +7,7 @@ MANAGE = poetry run python manage.py
 
 LOCALE ?= 'ru'
 TAG ?= 'list'
-APP ?= 'restaurant'
+APP ?= restaurant
 MIGRATION_NAME ?= ''
 MIGRATION_NUM ?= ''
 
@@ -124,7 +124,13 @@ linter:
 # Check typing
 .PHONY: mypy
 mypy:
-	poetry run mypy .
+	$(DOCKER_EXEC) poetry run mypy .
+
+# Check app typing in CI
+# Example: make mypyapp-ci; make mypyapp-ci APP=restaurant
+.PHONY: mypyapp-ci
+mypyapp-ci:
+	poetry run mypy $(APP) --no-incremental
 
 
 # -------------- TEST --------------

@@ -5,6 +5,7 @@ description = ""
 authors = [
     {name = "Yulia Kuznetsova",email = "kooznitsa@gmail.com"}
 ]
+package-mode = false
 readme = "README.md"
 dependencies = [
     "django (>=5.2.4,<6.0.0)",
@@ -16,12 +17,15 @@ dependencies = [
     "psycopg2-binary (>=2.9.10,<3.0.0)",
     "python-dotenv (>=1.1.1,<2.0.0)",
     "django-money (>=3.5.4,<4.0.0)",
-    "flake8 (>=7.3.0,<8.0.0)",
     "drf-standardized-errors[openapi] (>=0.15.0,<0.16.0)",
     "django-filter (>=25.1,<26.0)",
-    "djangorestframework-simplejwt (>=5.5.1,<6.0.0)",
-    "mypy (>=1.17.1,<2.0.0)",
+    "djangorestframework-simplejwt (>=5.5.1,<6.0.0)"
 ]
+
+
+[tool.poetry.group.dev.dependencies]
+flake8 = ">=7.3.0,<8.0.0"
+mypy = ">=1.17.1,<2.0.0"
 
 
 [build-system]
@@ -39,4 +43,4 @@ disable_error_code = ["import-untyped"]
 disallow_untyped_defs = true
 warn_unused_ignores = true
 strict_optional = true
-exclude = 'migrations/'
+exclude = 'migrations/|.venv/'
