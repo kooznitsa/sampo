@@ -5,6 +5,7 @@ description = ""
 authors = [
     {name = "Yulia Kuznetsova",email = "kooznitsa@gmail.com"}
 ]
+package-mode = false
 readme = "README.md"
 dependencies = [
     "django (>=5.2.4,<6.0.0)",
