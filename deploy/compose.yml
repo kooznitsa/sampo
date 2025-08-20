@@ -10,6 +10,10 @@ services:
       context: ../
       target: dev
       dockerfile: deploy/Dockerfile
+    deploy:
+      resources:
+        limits:
+          memory: 6g
     hostname: backend
     container_name: ${APP_NAME}_backend
     restart: always

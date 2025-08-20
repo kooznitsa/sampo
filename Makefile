@@ -130,7 +130,7 @@ mypy:
 # Example: make mypyapp; make mypyapp APP=restaurant
 .PHONY: mypyapp
 mypyapp:
-	$(DOCKER_EXEC) poetry run mypy $(APP) --incremental --cache-dir=/tmp/mypy_cache
+	$(DOCKER_EXEC) poetry run mypy $(APP)
 
 
 # -------------- TEST --------------

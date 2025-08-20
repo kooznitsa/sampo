@@ -8,7 +8,9 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
+    container:
+      options: --memory=6g --cpus=2
 
     steps:
       - uses: actions/checkout@v4
