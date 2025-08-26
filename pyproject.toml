@@ -19,7 +19,8 @@ dependencies = [
     "django-money (>=3.5.4,<4.0.0)",
     "drf-standardized-errors[openapi] (>=0.15.0,<0.16.0)",
     "django-filter (>=25.1,<26.0)",
-    "djangorestframework-simplejwt (>=5.5.1,<6.0.0)"
+    "djangorestframework-simplejwt (>=5.5.1,<6.0.0)",
+    "factory-boy (>=3.3.3,<4.0.0)"
 ]
 
 

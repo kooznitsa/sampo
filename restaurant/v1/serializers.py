@@ -37,7 +37,10 @@ class RestaurantSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.Restaurant
-        fields = ('id', 'name', 'category', 'city', 'address', 'phone_number', 'restaurant_url', 'menu_url', 'ranking')
+        fields = (
+            'id', 'name', 'category', 'city', 'address', 'phone_number', 'restaurant_url', 'menu_url', 'ranking',
+            'comment',
+        )
 
     @transaction.atomic
     def create(self, validated_data: dict) -> models.Restaurant:
@@ -67,4 +70,4 @@ class DishSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.Dish
-        fields = ('id', 'name', 'price', 'restaurant', 'restaurant_detail', 'weight_grams', 'quantity')
+        fields = ('id', 'name', 'price', 'restaurant', 'restaurant_detail', 'weight_grams', 'quantity', 'comment')
