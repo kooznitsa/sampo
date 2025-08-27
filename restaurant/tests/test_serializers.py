@@ -86,7 +86,7 @@ class DishSerializerTestCase(TestCase):
         self.assertIsNotNone(created_dish.weight_grams)
         self.assertIsNotNone(created_dish.quantity)
         self.assertIsNotNone(created_dish.comment)
-        self.assertIsNotNone(created_dish.tags)
+        self.assertTrue(created_dish.tags)
 
     def test_dish_serializer_update(self) -> None:
         dish = models.Dish.objects.first()
@@ -105,4 +105,5 @@ class DishSerializerTestCase(TestCase):
         self.assertIsNotNone(updated_dish.weight_grams)
         self.assertIsNotNone(updated_dish.quantity)
         self.assertIsNotNone(updated_dish.comment)
-        self.assertIsNotNone(updated_dish.tags)
+
+        self.assertTrue(updated_dish.tags)

@@ -88,6 +88,7 @@ class DishFactory(factory.django.DjangoModelFactory):
     @classmethod
     def as_payload(cls, **kwargs: Any) -> dict[str, Any]:
         obj = cls.build(**kwargs)
+        tags = kwargs.pop('tags', [TagFactory()])
         return {
             'name': obj.name,
             'price': {'amount': float(obj.price.amount), 'currency': str(obj.price.currency)},
@@ -95,6 +96,7 @@ class DishFactory(factory.django.DjangoModelFactory):
             'weight_grams': obj.weight_grams,
             'quantity': obj.quantity,
             'comment': obj.comment,
+            'tags': [str(tag) for tag in tags],
         }
 
 

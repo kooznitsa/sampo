@@ -60,14 +60,26 @@ class RestaurantShortSerializer(serializers.ModelSerializer):
         fields = ('id', 'name', 'address')
 
 
+class TagSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.Tag
+        fields = ('id', 'name',)
+
+
 class DishSerializer(serializers.ModelSerializer):
     restaurant = serializers.PrimaryKeyRelatedField(
         queryset=models.Restaurant.objects.only('id', 'name', 'address'),
         write_only=True,
     )
-    restaurant_detail = RestaurantShortSerializer(source='restaurant', read_only=True)
     price = MoneyField()
+    tags = SlugRelatedFieldWithCreate(slug_field='name', queryset=models.Tag.objects.all(), many=True)
 
     class Meta:
         model = models.Dish
-        fields = ('id', 'name', 'price', 'restaurant', 'restaurant_detail', 'weight_grams', 'quantity', 'comment')
+        fields = ('id', 'name', 'price', 'restaurant', 'weight_grams', 'quantity', 'comment', 'tags')
+
+    def to_representation(self, instance: models.Dish) -> dict:
+        rep = super().to_representation(instance)
+        rep['restaurant'] = RestaurantShortSerializer(instance.restaurant, context=self.context).data
+        rep['tags'] = TagSerializer(instance.tags.all(), many=True, context=self.context).data
+        return rep
