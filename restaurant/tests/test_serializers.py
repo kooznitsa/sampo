@@ -105,5 +105,4 @@ class DishSerializerTestCase(TestCase):
         self.assertIsNotNone(updated_dish.weight_grams)
         self.assertIsNotNone(updated_dish.quantity)
         self.assertIsNotNone(updated_dish.comment)
-
         self.assertTrue(updated_dish.tags)
