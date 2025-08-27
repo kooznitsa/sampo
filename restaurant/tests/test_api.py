@@ -177,7 +177,7 @@ class DishApiTestCase(AuthenticatedAPITestCase):
         response = self.client.get(f'{BASE_URL}{self.uri}{dish.pk}/')
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data.get('restaurant_detail').get('name'), str(restaurant))
+        self.assertEqual(response.data.get('restaurant').get('name'), str(restaurant))
 
     def test_get_nonexistent_dish_detail_fails(self) -> None:
         response = self.client.get(f'{BASE_URL}{self.uri}{self.nonexistent_id}/')
@@ -199,6 +199,7 @@ class DishApiTestCase(AuthenticatedAPITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(response.data.get('name'), self.dish_name)
         self.assertIsNotNone(created_dish)
+        self.assertEqual(response.data.get('tags')[0].get('name'), created_dish.tags.first().name)
 
     def test_create_dish_with_nonexistent_restaurant_fails(self) -> None:
         payload = self.payload | {'restaurant': self.nonexistent_id}
@@ -223,6 +224,17 @@ class DishApiTestCase(AuthenticatedAPITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data.get('name'), self.dish_name)
         self.assertEqual(updated_dish.name, self.dish_name)
+
+    def test_update_dish_tags(self) -> None:
+        dish = models.Dish.objects.first()
+        payload = self.payload | {'tags': [self.dish_name]}
+        response = self.client.put(f'{BASE_URL}{self.uri}{dish.pk}/', payload, format='json')
+        updated_dish = models.Dish.objects.first()
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data.get('name'), self.dish_name)
+        self.assertEqual(updated_dish.name, self.dish_name)
+        self.assertEqual(updated_dish.tags.first().name, self.dish_name)
 
     def test_delete_dish(self) -> None:
         dish = models.Dish.objects.first()
