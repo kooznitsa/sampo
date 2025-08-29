@@ -32,3 +32,10 @@ cd sampo
 cp env/.env.example env/.env.local
 make build
 ```
+
+## Релиз
+
+```bash
+chmod +x release.sh
+./release.sh v1.0.0
+```
