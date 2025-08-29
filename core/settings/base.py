@@ -246,7 +246,7 @@ SPECTACULAR_SETTINGS = {
     'SERVE_INCLUDE_SCHEMA': False,
     'CONTACT': {
         'name': 'kooznitsa',
-        'url': 't.me/kooznitsa',
+        'url': 'https://t.me/kooznitsa',
     },
     'LICENSE': {'name': 'BSD License'},
     'SERVE_PUBLIC': True,
