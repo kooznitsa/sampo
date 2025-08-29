@@ -7,7 +7,7 @@ MANAGE = poetry run python manage.py
 
 LOCALE ?= 'ru'
 TAG ?= 'list'
-APP ?= 'restaurant'
+APP ?= restaurant
 MIGRATION_NAME ?= ''
 MIGRATION_NUM ?= ''
 
@@ -26,6 +26,7 @@ help:
 	@echo "  load                                            to load fixtures"
 	@echo "  migrations                                      to create migration file with a default name"
 	@echo "  migrate                                         to apply migrations"
+	@echo "  mypy                                            to check typing"
 	@echo "  namedmigrations MIGRATION_NAME=<name>           to create migration file with a specific name"
 	@echo "  rollback APP=<app_name> MIGRATION_NUM=<number>  to reverse migrations"
 	@echo "  rollbacktozero APP=<app_name>                   to rollback to initial migration"
@@ -118,6 +119,18 @@ rollbacktozero:
 .PHONY: linter
 linter:
 	$(DOCKER_EXEC) poetry run flake8 ./ --ignore="E121,E122,E126,E201,E226,E266,E402,E501,Q000" --exclude=".venv"
+
+
+# Check typing
+.PHONY: mypy
+mypy:
+	$(DOCKER_EXEC) poetry run mypy .
+
+# Check app typing in CI
+# Example: make mypyapp-ci; make mypyapp-ci APP=restaurant
+.PHONY: mypyapp-ci
+mypyapp-ci:
+	poetry run mypy $(APP) --no-incremental
 
 
 # -------------- TEST --------------
