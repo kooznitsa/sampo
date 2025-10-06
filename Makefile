@@ -20,6 +20,7 @@ help:
 	@echo "Please use \`make <target>' where <target> is one of"
 	@echo "  build                                           to build Docker containers"
 	@echo "  checkmigrations                                 to check migrations"
+	@echo "  collect_links                                   to collect restaurant links"
 	@echo "  createsuperuser                                 to create super user"
 	@echo "  dump                                            to create database dump"
 	@echo "  linter                                          to run linter"
@@ -113,6 +114,19 @@ rollbacktozero:
 	$(DOCKER_EXEC) $(MANAGE) migrate $(APP) zero --settings=core.settings.$(ENV)
 
 
+# -------------- DATABASE --------------
+
+# Create database dump
+.PHONY: dump
+dump:
+	$(DOCKER_EXEC) poetry run python -Xutf8 manage.py dumpdata --natural-foreign --exclude=auth.permission --exclude=contenttypes --exclude=admin.logentry --exclude=auth.group --exclude=auth.user --exclude=sessions.session --output=db_data.json --settings=core.settings.local
+
+# Load database data
+.PHONY: load
+load:
+	$(DOCKER_EXEC) $(MANAGE) loaddata db_data.json
+
+
 # -------------- LINTER --------------
 
 # Run linter
@@ -135,16 +149,6 @@ mypyapp-ci:
 
 # -------------- TEST --------------
 
-# Create database dump (/api/fixtures/db_data.json)
-.PHONY: dump
-dump:
-	python -Xutf8 manage.py dumpdata --natural-foreign --exclude=auth.permission --exclude=contenttypes --exclude=admin.logentry --exclude=auth.group --exclude=auth.user --exclude=sessions.session --exclude=visa.visafree --indent=4 --output=db_data.json --settings=odyssey.settings
-
-# Load fixtures
-.PHONY: load
-load:
-	$(DOCKER_EXEC) $(MANAGE) loaddata db_data.json
-
 # Run all tests
 .PHONY: testall
 testall:
@@ -155,3 +159,11 @@ testall:
 .PHONY: testapp
 testapp:
 	$(DOCKER_EXEC) $(MANAGE) test $(APP).tests --tag=$(TAG)
+
+
+# -------------- CUSTOM COMMANDS --------------
+
+# Collect restaurant links
+.PHONY: collect_links
+collect_links:
+	$(DOCKER_EXEC) $(MANAGE) collect_links
