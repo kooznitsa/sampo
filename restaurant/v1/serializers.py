@@ -33,7 +33,7 @@ class SlugRelatedFieldWithCreate(SlugRelatedField):
 class RestaurantSerializer(serializers.ModelSerializer):
     category = SlugRelatedFieldWithCreate(slug_field='name', queryset=models.Category.objects.all())
     city = SlugRelatedFieldWithCreate(slug_field='name', queryset=models.City.objects.all())
-    ranking = serializers.IntegerField(min_value=0, max_value=5)
+    ranking = serializers.FloatField(min_value=0, max_value=5)
 
     class Meta:
         model = models.Restaurant
