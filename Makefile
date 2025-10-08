@@ -31,6 +31,7 @@ help:
 	@echo "  namedmigrations MIGRATION_NAME=<name>           to create migration file with a specific name"
 	@echo "  rollback APP=<app_name> MIGRATION_NUM=<number>  to reverse migrations"
 	@echo "  rollbacktozero APP=<app_name>                   to rollback to initial migration"
+	@echo "  scrape_menu                                     to scrape menu"
 	@echo "  startapp APP=<app_name>                         to create a Django app"
 	@echo "  stop                                            to stop Docker containers"
 	@echo "  testall                                         to run all tests"
@@ -167,3 +168,8 @@ testapp:
 .PHONY: collect_links
 collect_links:
 	$(DOCKER_EXEC) $(MANAGE) collect_links
+
+# Scrape restaurant menu
+.PHONY: scrape_menu
+scrape_menu:
+	$(DOCKER_EXEC) $(MANAGE) scrape_menu

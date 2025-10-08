@@ -76,10 +76,26 @@ class DishSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.Dish
-        fields = ('id', 'name', 'price', 'restaurant', 'weight_grams', 'quantity', 'comment', 'tags')
+        fields = ('id', 'name', 'price', 'restaurant', 'weight', 'weight_unit', 'quantity', 'comment', 'tags')
 
     def to_representation(self, instance: models.Dish) -> dict:
         rep = super().to_representation(instance)
         rep['restaurant'] = RestaurantShortSerializer(instance.restaurant, context=self.context).data
         rep['tags'] = TagSerializer(instance.tags.all(), many=True, context=self.context).data
         return rep
+
+    def create(self, validated_data: dict) -> models.Dish:
+        tags = validated_data.pop('tags', [])
+        restaurant = validated_data.get('restaurant')
+
+        lookup = {
+            'name': validated_data.get('name'),
+            'restaurant': restaurant,
+        }
+
+        dish, created = models.Dish.objects.update_or_create(defaults=validated_data, **lookup)
+
+        if tags:
+            dish.tags.set(tags)
+
+        return dish
