@@ -72,7 +72,7 @@ class DishSerializer(serializers.ModelSerializer):
         write_only=True,
     )
     price = MoneyField()
-    tags = SlugRelatedFieldWithCreate(slug_field='name', queryset=models.Tag.objects.all(), many=True)
+    tags = SlugRelatedFieldWithCreate(slug_field='name', queryset=models.Tag.objects.all(), many=True, required=False)
 
     class Meta:
         model = models.Dish
@@ -99,3 +99,7 @@ class DishSerializer(serializers.ModelSerializer):
             dish.tags.set(tags)
 
         return dish
+
+    def get_unique_together_validators(self) -> list:
+        """Override method to disable unique together checks."""
+        return []

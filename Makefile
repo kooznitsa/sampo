@@ -10,6 +10,7 @@ TAG ?= 'list'
 APP ?= restaurant
 MIGRATION_NAME ?= ''
 MIGRATION_NUM ?= ''
+PACKAGE ?= ''
 
 
 # -------------- HELP --------------
@@ -29,6 +30,7 @@ help:
 	@echo "  migrate                                         to apply migrations"
 	@echo "  mypy                                            to check typing"
 	@echo "  namedmigrations MIGRATION_NAME=<name>           to create migration file with a specific name"
+	@echo "  poetryadd PACKAGE=<package>                     to add package"
 	@echo "  rollback APP=<app_name> MIGRATION_NUM=<number>  to reverse migrations"
 	@echo "  rollbacktozero APP=<app_name>                   to rollback to initial migration"
 	@echo "  scrape_menu                                     to scrape menu"
@@ -63,6 +65,15 @@ stop:
 .PHONY: entercontainer
 entercontainer:
 	docker exec -it $(APP_NAME)_backend sh
+
+
+# -------------- PACKAGES --------------
+
+# Add package
+# Example: make poetryadd PACKAGE=mypy
+.PHONY: poetryadd
+poetryadd:
+	$(DOCKER_EXEC) poetry add $(PACKAGE)
 
 
 # -------------- DJANGO --------------

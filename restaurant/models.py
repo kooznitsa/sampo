@@ -49,7 +49,7 @@ class Restaurant(DateTimeMixin):
     menu_url = models.URLField(verbose_name='Сайт меню', null=True, blank=True)
     ranking = models.FloatField(verbose_name='Рейтинг', default=0.0)
     comment = models.TextField(verbose_name='Комментарий', null=True, blank=True)
-    menu_update_date = models.DateTimeField(verbose_name='Дата обновления меню', null=True, blank=True)
+    menu_update_date = models.DateField(verbose_name='Дата обновления меню', null=True, blank=True)
 
     class Meta:
         verbose_name = 'Ресторан'

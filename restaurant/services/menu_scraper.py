@@ -1,10 +1,11 @@
 import logging
 
+from django.db import transaction
+
 from bs4 import BeautifulSoup
 from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
 
+from restaurant.exceptions import MenuNotFoundException
 from restaurant.models import Restaurant
 from restaurant.services import BaseCrawler
 from restaurant.services.parsers import MenuParser
@@ -27,16 +28,7 @@ class MenuScraper(BaseCrawler):
 
         try:
             self.driver.get(self.url)
-            wait = WebDriverWait(self.driver, self.timeout)
-            try:
-                wait.until(EC.presence_of_element_located(
-                    (By.XPATH, "//*[contains(text(), 'Меню') or contains(@class, 'menu') or contains(@class, 'section')]"))
-                )
-            except Exception as e:
-                error_logger.error(f'Error finding menu: {e}')
-
             self.parse_menu_html()
-
         finally:
             self.driver.quit()
 
@@ -44,6 +36,9 @@ class MenuScraper(BaseCrawler):
         results = []
         cards = self.driver.find_elements(By.CSS_SELECTOR, self.parser.card_item)
         info_logger.info(f'Found {len(cards)} cards via Selenium selector "{self.parser.card_item}"')
+
+        if len(cards) == 0:
+            raise MenuNotFoundException(f'Menu not found for URL {self.url}')
 
         updated_at_els = self.driver.find_elements(By.CSS_SELECTOR, self.parser.updated_at)
         updated_at = None
@@ -57,8 +52,9 @@ class MenuScraper(BaseCrawler):
             soup = BeautifulSoup(inner, 'html.parser')
             data = self._parse_card(soup)
             info_logger.info(data)
-            results.append(data | {'menu_update_at': updated_at})
-            # TODO: write to DB
+            data |= {'menu_update_at': updated_at, 'restaurant': self.restaurant.id}
+            results.append(data)
+            self._write_data_to_db(data)
         return results
 
     def _parse_card(self, soup: BeautifulSoup) -> dict:
@@ -72,6 +68,7 @@ class MenuScraper(BaseCrawler):
             'comment': self.parser.get_description(soup),
         }
 
+    @transaction.atomic
     def _write_data_to_db(self, data: dict) -> None:
         menu_update_date = data.pop('menu_update_at') if 'menu_update_at' in data else None
 
@@ -82,7 +79,7 @@ class MenuScraper(BaseCrawler):
                     obj = serializer.save()
                     info_logger.info(f'Saved dish ID={obj.id}, name={name}, {self.restaurant=}')
                 except Exception as e:
-                    error_logger.error(f'Error while creating dish with {name=} and {self.restaurant=}: {e}.')
+                    error_logger.error(f'Error while writing data to db ({self.url}): {e}')
             else:
                 error_logger.error(serializer.errors)
 
