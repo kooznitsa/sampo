@@ -4,6 +4,8 @@ from django.db import transaction
 
 from bs4 import BeautifulSoup
 from selenium.webdriver.common.by import By
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.ui import WebDriverWait
 
 from restaurant.exceptions import MenuNotFoundException
 from restaurant.models import Restaurant
@@ -28,6 +30,13 @@ class MenuScraper(BaseCrawler):
 
         try:
             self.driver.get(self.url)
+            wait = WebDriverWait(self.driver, self.timeout)
+            try:
+                wait.until(EC.presence_of_element_located(
+                    (By.XPATH, "//*[contains(text(), 'Меню') or contains(@class, 'menu') or contains(@class, 'section')]"))
+                )
+            except Exception as e:
+                error_logger.error(f'Error finding menu: {e}')
             self.parse_menu_html()
         finally:
             self.driver.quit()

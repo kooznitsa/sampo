@@ -51,5 +51,5 @@ class DishAdmin(admin.ModelAdmin):
 
     @admin.display(description='Ресторан')
     def restaurant_link(self, obj: models.Dish) -> Any | SafeString:
-        url = reverse('admin:restaurant_restaurant_change', args=[obj.id])
+        url = reverse('admin:restaurant_restaurant_change', args=[obj.restaurant.id])
         return format_html(f'<a href="{url}">{obj.restaurant}</a>')

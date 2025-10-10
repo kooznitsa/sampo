@@ -61,16 +61,24 @@ class MenuParser:
         return None
 
     def get_weight(self, soup: BeautifulSoup) -> dict | None:
+        result = None
         if el := soup.select_one(self.dish_volume):
             text = el.get_text(strip=True)
-            return DishAmountParser().parse_weight(text)
-        return None
+            result = DishAmountParser().parse_weight(text)
+            if not result:
+                name = self.get_name(soup)
+                result = DishAmountParser().parse_weight(name) if name else None
+        return result
 
     def get_quantity(self, soup: BeautifulSoup) -> int | None:
+        result = None
         if el := soup.select_one(self.dish_volume):
             text = el.get_text(strip=True)
-            return DishAmountParser().parse_quantity(text)
-        return None
+            result = DishAmountParser().parse_quantity(text)
+            if not result:
+                name = self.get_name(soup)
+                result = DishAmountParser().parse_quantity(name) if name else None
+        return result
 
     def get_description(self, soup: BeautifulSoup) -> str | None:
         if el := soup.select_one(self.dish_description):
