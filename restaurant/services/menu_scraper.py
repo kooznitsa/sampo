@@ -28,6 +28,10 @@ class MenuScraper:
 
     def run(self) -> None:
         self.driver.get(self.url)
+        self._wait()
+        self._parse_menu_html()
+
+    def _wait(self) -> None:
         wait = WebDriverWait(self.driver, self.timeout)
         try:
             wait.until(EC.presence_of_element_located(
@@ -35,9 +39,8 @@ class MenuScraper:
             )
         except Exception as e:
             error_logger.error(f'Error finding menu: {e}')
-        self.parse_menu_html()
 
-    def parse_menu_html(self) -> list[dict]:
+    def _parse_menu_html(self) -> list[dict]:
         results = []
         cards = self.driver.find_elements(By.CSS_SELECTOR, self.parser.card_item)
         info_logger.info(f'Found {len(cards)} cards via Selenium selector "{self.parser.card_item}"')

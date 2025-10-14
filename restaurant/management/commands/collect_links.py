@@ -3,9 +3,10 @@ from typing import Any
 
 from django.core.management.base import BaseCommand
 
-from restaurant.services import LinkCollector
+from restaurant.services import DriverManager, LinkCollector
 
-logger = logging.getLogger('info')
+info_logger = logging.getLogger('info_logger')
+error_logger = logging.getLogger('error_logger')
 
 
 class Command(BaseCommand):
@@ -13,7 +14,11 @@ class Command(BaseCommand):
 
     def handle(self, *args: Any, **options: Any) -> None:
         try:
-            LinkCollector().run()
+            driver_manager = DriverManager()
+            driver = driver_manager.init()
+            info_logger.info('Driver initialized.')
+            LinkCollector(driver, driver_manager.timeout).run()
+            driver_manager.quit()
             self.stdout.write('Restaurant links collected successfully.')
         except Exception as e:
-            logger.error(f'Failed to collect restaurant links: {e}')
+            error_logger.error(f'Failed to collect restaurant links: {e}')
