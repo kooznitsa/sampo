@@ -3,13 +3,13 @@ import logging
 from django.db import transaction
 
 from bs4 import BeautifulSoup
+from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
 from restaurant.exceptions import MenuNotFoundException
 from restaurant.models import Restaurant
-from restaurant.services import BaseCrawler
 from restaurant.services.parsers import MenuParser
 from restaurant.v1.serializers import DishSerializer
 
@@ -17,34 +17,31 @@ info_logger = logging.getLogger('info_logger')
 error_logger = logging.getLogger('error_logger')
 
 
-class MenuScraper(BaseCrawler):
+class MenuScraper:
 
-    def __init__(self, restaurant: Restaurant) -> None:
+    def __init__(self, restaurant: Restaurant, driver: webdriver.Remote, timeout: int) -> None:
         self.parser = MenuParser()
         self.restaurant = restaurant
         self.url = restaurant.menu_url
+        self.driver = driver
+        self.timeout = timeout
 
     def run(self) -> None:
-        self._init_driver()
-        info_logger.info('Driver initialized.')
-
+        self.driver.get(self.url)
+        wait = WebDriverWait(self.driver, self.timeout)
         try:
-            self.driver.get(self.url)
-            wait = WebDriverWait(self.driver, self.timeout)
-            try:
-                wait.until(EC.presence_of_element_located(
-                    (By.XPATH, "//*[contains(text(), 'Меню') or contains(@class, 'menu') or contains(@class, 'section')]"))
-                )
-            except Exception as e:
-                error_logger.error(f'Error finding menu: {e}')
-            self.parse_menu_html()
-        finally:
-            self.driver.quit()
+            wait.until(EC.presence_of_element_located(
+                (By.XPATH, "//*[contains(text(), 'Меню') or contains(@class, 'menu') or contains(@class, 'section')]"))
+            )
+        except Exception as e:
+            error_logger.error(f'Error finding menu: {e}')
+        self.parse_menu_html()
 
     def parse_menu_html(self) -> list[dict]:
         results = []
         cards = self.driver.find_elements(By.CSS_SELECTOR, self.parser.card_item)
         info_logger.info(f'Found {len(cards)} cards via Selenium selector "{self.parser.card_item}"')
+        info_logger.info(f'Start scraping URL {self.url}')
 
         if len(cards) == 0:
             raise MenuNotFoundException(f'Menu not found for URL {self.url}')
