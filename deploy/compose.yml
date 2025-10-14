@@ -82,6 +82,7 @@ services:
   chrome:
     <<: *app-main
     image: selenium/node-chrome:beta
+    container_name: ${APP_NAME}_chrome
     shm_size: 2gb
     depends_on:
       - selenium-hub
@@ -91,11 +92,57 @@ services:
   selenium-hub:
     <<: *app-main
     image: selenium/hub:latest
-    container_name: selenium-hub
+    container_name: ${APP_NAME}_selenium-hub
     ports:
       - '4442:4442'
       - '4443:4443'
       - '4444:4444'
+
+  redis:
+    <<: *app-main
+    image: redis:7
+    container_name: ${APP_NAME}_redis
+    restart: always
+    ports:
+      - '6379:6379'
+
+  celery:
+    <<: *app-main
+    build:
+      context: ../
+      target: dev
+      dockerfile: deploy/Dockerfile
+    command: poetry run celery -A core worker -l info
+    container_name: ${APP_NAME}_celery
+    depends_on:
+      - postgres
+      - backend
+      - redis
+      - selenium-hub
+      - chrome
+    env_file:
+      - ../env/.env.${ENV}
+    volumes:
+      - ../:/home/app
+
+  flower:
+    <<: *app-main
+    build:
+      context: ../
+      target: dev
+      dockerfile: deploy/Dockerfile
+    container_name: ${APP_NAME}_flower
+    restart: always
+    command: poetry run celery -A core flower
+    depends_on:
+      - redis
+      - celery
+    ports:
+      - '5555:5555'
+    env_file:
+      - ../env/.env.${ENV}
+    volumes:
+      - ../:/home/app
 
 volumes:
   static-volume:
