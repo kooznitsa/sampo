@@ -2,6 +2,7 @@ from django.db import models
 
 from djmoney.models.fields import MoneyField
 
+from restaurant.enums import WeightEnum
 from restaurant.mixins import DateTimeMixin
 
 
@@ -48,6 +49,7 @@ class Restaurant(DateTimeMixin):
     menu_url = models.URLField(verbose_name='Сайт меню', null=True, blank=True)
     ranking = models.FloatField(verbose_name='Рейтинг', default=0.0)
     comment = models.TextField(verbose_name='Комментарий', null=True, blank=True)
+    menu_update_date = models.DateField(verbose_name='Дата обновления меню', null=True, blank=True)
 
     class Meta:
         verbose_name = 'Ресторан'
@@ -62,14 +64,20 @@ class Dish(DateTimeMixin):
     name = models.CharField(verbose_name='Название блюда', max_length=255)
     price = MoneyField(verbose_name='Цена', max_digits=8, decimal_places=2, default_currency='RUB')
     restaurant = models.ForeignKey('Restaurant', verbose_name='Ресторан', on_delete=models.CASCADE)
-    weight_grams = models.IntegerField(verbose_name='Вес в граммах', null=True, blank=True)
-    quantity = models.IntegerField(verbose_name='Количество в штуках', null=True, blank=True)
+    weight = models.FloatField(verbose_name='Вес или объём', null=True, blank=True)
+    weight_unit = models.CharField(
+        verbose_name='Единица измерения веса или объёма',
+        choices=WeightEnum.choices, default=WeightEnum.G,
+        max_length=2, null=True, blank=True,
+    )
+    quantity = models.PositiveIntegerField(verbose_name='Количество в штуках', null=True, blank=True)
     comment = models.TextField(verbose_name='Комментарий', null=True, blank=True)
     tags = models.ManyToManyField('Tag', verbose_name='Теги', related_name='dishes', blank=True)
 
     class Meta:
         verbose_name = 'Блюдо'
         verbose_name_plural = 'Блюда'
+        unique_together = [['name', 'restaurant']]
 
     def __str__(self) -> str:
         return self.name

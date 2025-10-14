@@ -7,9 +7,8 @@ from django.db import IntegrityError
 
 from bs4 import BeautifulSoup
 from bs4.element import Tag
-from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
 
+from restaurant.services import BaseCrawler
 from restaurant.services.parsers import RestaurantListParser
 from restaurant.v1.serializers import RestaurantSerializer
 
@@ -17,12 +16,10 @@ info_logger = logging.getLogger('info_logger')
 error_logger = logging.getLogger('error_logger')
 
 
-class LinkCollector:
+class LinkCollector(BaseCrawler):
     base_url = 'https://yandex.ru/maps/2/saint-petersburg/category/'
-    user_agent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
     spb_coordinates = {'lat_min': 59.8, 'lat_max': 60.1, 'lon_min': 30.1, 'lon_max': 30.5}
     categories = {'coffee_shop': 'Кофейня', 'restaurant': 'Ресторан', 'fast_food': 'Быстрое питание', 'pub': 'Бар'}
-    parser = RestaurantListParser()
 
     def __init__(self) -> None:
         self.parser = RestaurantListParser()
@@ -69,19 +66,6 @@ class LinkCollector:
 
         except Exception as e:
             error_logger.error(e)
-
-    def _init_driver(self) -> None:
-        options = Options()
-        options.add_argument('--headless=new')
-        options.add_argument('--no-sandbox')  # for Docker
-        options.add_argument('--disable-dev-shm-usage')  # for memory
-        options.add_argument('--disable-blink-features=AutomationControlled')
-        options.add_argument(f'--user-agent="{self.user_agent}"')
-
-        self.driver = webdriver.Remote(
-            command_executor='http://selenium-hub:4444/wd/hub',
-            options=options,
-        )
 
     def _parse_card(self, card: Tag) -> tuple[str | None, str | None, float, str | None]:
         name = self.parser.get_name(card)

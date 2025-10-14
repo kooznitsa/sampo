@@ -22,13 +22,13 @@ dependencies = [
     "djangorestframework-simplejwt (>=5.5.1,<6.0.0)",
     "factory-boy (>=3.3.3,<4.0.0)",
     "selenium (>=4.35.0,<5.0.0)",
-    "beautifulsoup4 (>=4.13.5,<5.0.0)"
+    "beautifulsoup4 (>=4.13.5,<5.0.0)",
 ]
 
 
 [tool.poetry.group.dev.dependencies]
 flake8 = ">=7.3.0,<8.0.0"
-mypy = ">=1.17.1,<2.0.0"
+mypy = "1.17.1"
 
 
 [build-system]
@@ -46,4 +46,4 @@ disable_error_code = ["import-untyped"]
 disallow_untyped_defs = true
 warn_unused_ignores = true
 strict_optional = true
-exclude = 'migrations/|.venv/'
+exclude = 'migrations/|.venv/|enums\.py'

@@ -40,15 +40,16 @@ class RestaurantAdmin(admin.ModelAdmin):
     list_display = ('id', 'name', 'category', 'address', 'phone_number', 'ranking')
     search_fields = ('name',)
     search_help_text = 'Поиск по полю «Название ресторана»'
+    readonly_fields = ('menu_update_date',)
 
 
 @admin.register(models.Dish)
 class DishAdmin(admin.ModelAdmin):
-    list_display = ('id', 'name', 'price', 'restaurant_link', 'weight_grams', 'quantity')
+    list_display = ('id', 'name', 'price', 'restaurant_link', 'weight', 'weight_unit', 'quantity')
     search_fields = ('name',)
     search_help_text = 'Поиск по полю «Название блюда»'
 
     @admin.display(description='Ресторан')
     def restaurant_link(self, obj: models.Dish) -> Any | SafeString:
-        url = reverse('admin:restaurant_restaurant_change', args=[obj.id])
+        url = reverse('admin:restaurant_restaurant_change', args=[obj.restaurant.id])
         return format_html(f'<a href="{url}">{obj.restaurant}</a>')

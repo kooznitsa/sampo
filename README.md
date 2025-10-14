@@ -33,6 +33,15 @@ cp env/.env.example env/.env.local
 make build
 ```
 
+Для установки зависимостей локально:
+
+```bash
+python3.12 -m venv .venv
+source .venv/bin/activate
+pip install poetry
+poetry install --no-root
+```
+
 ## Релиз
 
 ```bash
