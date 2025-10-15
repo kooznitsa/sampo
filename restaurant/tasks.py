@@ -24,9 +24,8 @@ def scrape_menu_task(self: Task, restaurant_id: int) -> dict | None:
         if not restaurant.menu_url or not restaurant.menu_url.endswith('/menu/'):
             raise MenuNotFoundException('Menu not found')
         MenuScraper(restaurant, driver, driver_manager.timeout).run()
+        driver_manager.quit()
         return {'status': 'success'}
     except (MenuNotFoundException, Exception) as e:
         error_logger.error(f'Scraping menu for restaurant ID={restaurant_id} failed: {e}')
-    finally:
-        driver_manager.quit()
     return None
