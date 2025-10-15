@@ -1,11 +1,14 @@
 from typing import Any
 
-from django.contrib import admin
+from django.contrib import admin, messages
+from django.core.handlers.wsgi import WSGIRequest
+from django.db.models.query import QuerySet
 from django.urls import reverse
 from django.utils.html import format_html
 from django.utils.safestring import SafeString
 
 import restaurant.models as models
+from restaurant.tasks import scrape_menu_task
 
 admin.site.site_header = 'Административная панель Sampo'
 admin.site.site_title = 'Административная панель Sampo'
@@ -41,6 +44,21 @@ class RestaurantAdmin(admin.ModelAdmin):
     search_fields = ('name',)
     search_help_text = 'Поиск по полю «Название ресторана»'
     readonly_fields = ('menu_update_date',)
+
+    actions = ['update_menu']
+
+    @admin.action(description='Обновить меню выбранных Ресторанов')
+    def update_menu(self, request: WSGIRequest, queryset: QuerySet) -> None:
+        queryset_ids = []
+        for restaurant in queryset:
+            queryset_ids.append(str(restaurant.id))
+            scrape_menu_task.delay(restaurant.id)
+
+        self.message_user(
+            request,
+            f'Меню выбранных ресторанов были успешно обновлены: {", ".join(queryset_ids)}',
+            messages.SUCCESS,
+        )
 
 
 @admin.register(models.Dish)

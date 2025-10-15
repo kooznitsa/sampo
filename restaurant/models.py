@@ -77,7 +77,7 @@ class Dish(DateTimeMixin):
     class Meta:
         verbose_name = 'Блюдо'
         verbose_name_plural = 'Блюда'
-        unique_together = [['name', 'restaurant']]
+        unique_together = [['name', 'restaurant', 'weight']]
 
     def __str__(self) -> str:
         return self.name
