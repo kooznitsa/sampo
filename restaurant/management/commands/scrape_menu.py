@@ -19,7 +19,7 @@ class Command(BaseCommand):
         driver = driver_manager.init()
         info_logger.info('Driver initialized.')
 
-        for restaurant in Restaurant.objects.order_by('pk'):
+        for restaurant in Restaurant.objects.select_related('category', 'city').order_by('pk'):
             menu_url = restaurant.menu_url
             restaurant_id = restaurant.id
 
@@ -38,5 +38,5 @@ class Command(BaseCommand):
                 error_logger.error(f'Failed to scrape restaurant menu ({menu_url}, ID={restaurant_id}): menu not found.')
             except Exception as e:
                 error_logger.error(f'Failed to scrape restaurant menu ({menu_url}, ID={restaurant_id}): {e}')
-
-        driver_manager.quit()
+            finally:
+                driver_manager.quit()

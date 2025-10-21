@@ -14,7 +14,9 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Create .env
-        run: cp env/.env.example env/.env.local
+        run:  |
+          cp env/.env.local.example env/.env.local
+          cp env/.env.test.example env/.env.test
 
       - name: Install make
         run: |

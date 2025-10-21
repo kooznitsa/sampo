@@ -53,13 +53,13 @@ services:
     container_name: ${APP_NAME}_test_postgres
     restart: on-failure
     environment:
-      POSTGRES_DB: ${APP_NAME}_database
-      POSTGRES_USER: ${APP_NAME}_user
-      POSTGRES_PASSWORD: ${APP_NAME}_password
-      POSTGRES_PORT: 5434
+      POSTGRES_DB: ${POSTGRES_TEST_DB}
+      POSTGRES_USER: ${POSTGRES_TEST_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_TEST_PASSWORD}
+      POSTGRES_PORT: 5432
       POSTGRES_HOST: test_postgres
     ports:
-      - '${POSTGRES_TEST_EXTERNAL_PORT}:5434'
+      - '${POSTGRES_TEST_EXTERNAL_PORT}:5432'
     volumes:
       - test-postgres:/var/lib/postgresql/data
       - ../scripts/create_databases.sql:/docker-entrypoint-initdb.d/create_databases.sql
@@ -83,6 +83,7 @@ services:
     <<: *app-main
     image: selenium/node-chrome:beta
     container_name: ${APP_NAME}_chrome
+    restart: always
     shm_size: 2gb
     depends_on:
       - selenium-hub
@@ -93,6 +94,7 @@ services:
     <<: *app-main
     image: selenium/hub:latest
     container_name: ${APP_NAME}_selenium-hub
+    restart: always
     ports:
       - '4442:4442'
       - '4443:4443'
@@ -105,6 +107,8 @@ services:
     restart: always
     ports:
       - '6379:6379'
+    volumes:
+      - redis:/data
 
   celery:
     <<: *app-main
@@ -114,6 +118,7 @@ services:
       dockerfile: deploy/Dockerfile
     command: poetry run celery -A core worker -l info
     container_name: ${APP_NAME}_celery
+    restart: always
     depends_on:
       - postgres
       - backend
@@ -148,6 +153,7 @@ volumes:
   static-volume:
   db-postgres:
   test-postgres:
+  redis:
 
 networks:
   sampo-net:

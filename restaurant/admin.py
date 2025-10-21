@@ -8,7 +8,7 @@ from django.utils.html import format_html
 from django.utils.safestring import SafeString
 
 import restaurant.models as models
-from restaurant.tasks import scrape_menu_task
+import restaurant.tasks as tasks
 
 admin.site.site_header = 'Административная панель Sampo'
 admin.site.site_title = 'Административная панель Sampo'
@@ -40,23 +40,36 @@ class TagAdmin(admin.ModelAdmin):
 
 @admin.register(models.Restaurant)
 class RestaurantAdmin(admin.ModelAdmin):
-    list_display = ('id', 'name', 'category', 'address', 'phone_number', 'ranking')
-    search_fields = ('name',)
-    search_help_text = 'Поиск по полю «Название ресторана»'
+    list_display = ('id', 'name', 'category', 'address', 'ranking', 'menu_url')
+    search_fields = ('name', 'menu_url')
+    search_help_text = 'Поиск по полям «Название ресторана» и «Сайт меню»'
     readonly_fields = ('menu_update_date',)
 
-    actions = ['update_menu']
+    actions = ['update_restaurant', 'update_menu']
 
-    @admin.action(description='Обновить меню выбранных Ресторанов')
-    def update_menu(self, request: WSGIRequest, queryset: QuerySet) -> None:
-        queryset_ids = []
+    @admin.action(description='Обновить данные выбранных Ресторанов')
+    def update_restaurant(self, request: WSGIRequest, queryset: QuerySet) -> None:
+        successful_ids = []
         for restaurant in queryset:
-            queryset_ids.append(str(restaurant.id))
-            scrape_menu_task.delay(restaurant.id)
+            successful_ids.append(str(restaurant.id))
+            tasks.scrape_restaurant_task.delay(restaurant.id)
 
         self.message_user(
             request,
-            f'Меню выбранных ресторанов были успешно обновлены: {", ".join(queryset_ids)}',
+            f'Рестораны поставлены в очередь для обновления данных: {", ".join(successful_ids)}',
+            messages.SUCCESS,
+        )
+
+    @admin.action(description='Обновить меню выбранных Ресторанов')
+    def update_menu(self, request: WSGIRequest, queryset: QuerySet) -> None:
+        successful_ids = []
+        for restaurant in queryset:
+            successful_ids.append(str(restaurant.id))
+            tasks.scrape_menu_task.delay(restaurant.id)
+
+        self.message_user(
+            request,
+            f'Рестораны поставлены в очередь для обновления меню: {", ".join(successful_ids)}',
             messages.SUCCESS,
         )
 
