@@ -28,10 +28,10 @@ class MenuScraper:
 
     def run(self) -> None:
         self.driver.get(self.url)
-        self._wait()
-        self._parse_menu_html()
+        self.wait()
+        self.parse_menu_html()
 
-    def _wait(self) -> None:
+    def wait(self) -> None:
         wait = WebDriverWait(self.driver, self.timeout)
         try:
             wait.until(EC.presence_of_element_located(
@@ -40,7 +40,7 @@ class MenuScraper:
         except Exception as e:
             error_logger.error(f'Error finding menu: {e}')
 
-    def _parse_menu_html(self) -> list[dict]:
+    def parse_menu_html(self) -> list[dict]:
         results = []
         cards = self.driver.find_elements(By.CSS_SELECTOR, self.parser.card_item)
         info_logger.info(f'Found {len(cards)} cards via Selenium selector "{self.parser.card_item}"')
@@ -59,14 +59,14 @@ class MenuScraper:
         for card in cards:
             inner = card.get_attribute('innerHTML') or ''
             soup = BeautifulSoup(inner, 'html.parser')
-            data = self._parse_card(soup)
+            data = self.parse_card(soup)
             info_logger.info(data)
             data |= {'menu_update_at': updated_at, 'restaurant': self.restaurant.id}
             results.append(data)
-            self._write_data_to_db(data)
+            self.write_data_to_db(data)
         return results
 
-    def _parse_card(self, soup: BeautifulSoup) -> dict:
+    def parse_card(self, soup: BeautifulSoup) -> dict:
         weight_data = self.parser.get_weight(soup)
         return {
             'name': self.parser.get_name(soup),
@@ -78,7 +78,7 @@ class MenuScraper:
         }
 
     @transaction.atomic
-    def _write_data_to_db(self, data: dict) -> None:
+    def write_data_to_db(self, data: dict) -> None:
         menu_update_date = data.pop('menu_update_at') if 'menu_update_at' in data else None
 
         if name := data.get('name'):

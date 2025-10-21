@@ -1,7 +1,7 @@
-from .base import *  # noqa
-
 from dotenv import load_dotenv
 import environ
+
+from .base import *  # noqa
 
 load_dotenv(BASE_DIR / 'env' / '.env.local')  # noqa
 
@@ -22,14 +22,6 @@ DATABASES = {
         'PASSWORD': env.str('POSTGRES_PASSWORD'),
         'HOST': env.str('POSTGRES_HOST'),
         'PORT': env.str('POSTGRES_PORT'),
-        'TEST': {
-            'ENGINE': 'django.db.backends.postgresql_psycopg2',
-            'NAME': env.str('POSTGRES_TEST_DB'),
-            'USER': env.str('POSTGRES_TEST_USER'),
-            'PASSWORD': env.str('POSTGRES_TEST_PASSWORD'),
-            'HOST': env.str('POSTGRES_TEST_HOST'),
-            'PORT': env.str('POSTGRES_TEST_PORT'),
-        },
         'OPTIONS': {
             'sslmode': env.str('DATABASE_SSLMODE', default='disable'),
         },

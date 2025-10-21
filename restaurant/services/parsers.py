@@ -12,13 +12,13 @@ from restaurant.enums import WeightEnum
 SPACE = '[ \u00A0\u202F\u2009]'
 
 
-class RestaurantListParser:
+class RestaurantParser:
 
     def __init__(self) -> None:
         self.base_url = 'https://yandex.ru'
-        self.card_tag = 'div.search-business-snippet-view'
-        self.name_tag = 'div.search-business-snippet-view__title'
-        self.address_tag = 'a.search-business-snippet-view__address'
+        self.one_card_tag = 'div.business-card-view__main-wrapper'
+        self.name_tag = 'div.search-business-snippet-view__title, h1.orgpage-header-view__header'
+        self.address_tag = 'a.search-business-snippet-view__address, a.business-contacts-view__address-link'
         self.ranking_tag = 'span.business-rating-badge-view__rating-text'
         self.link_tag = 'a[href*="/maps/org/"]'
 
@@ -36,7 +36,7 @@ class RestaurantListParser:
 
     def get_link(self, card: Tag) -> str | None:
         el = card.select_one(self.link_tag)
-        return f"{self.base_url}{el['href']}".replace('reviews', 'menu') if el else None
+        return UrlParser().parse_url(str(el['href'])) if el else None
 
 
 class MenuParser:
@@ -222,3 +222,11 @@ class DishAmountParser:
         text = re.sub(fr'{SPACE}', ' ', text).strip().lower()
         match = re.search(pattern, text)
         return int(match.group(1)) if match else None
+
+
+class UrlParser:
+
+    def parse_url(self, url: str) -> str | None:
+        pattern = re.compile(r'/maps/org(/[^/]+/\d+/)')
+        match = pattern.search(url)
+        return f'https://yandex.ru/maps/org{match.group(1)}menu/' if match else None

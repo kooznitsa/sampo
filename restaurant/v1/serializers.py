@@ -31,7 +31,7 @@ class SlugRelatedFieldWithCreate(SlugRelatedField):
 
 
 class RestaurantSerializer(serializers.ModelSerializer):
-    category = SlugRelatedFieldWithCreate(slug_field='name', queryset=models.Category.objects.all())
+    category = SlugRelatedFieldWithCreate(slug_field='name', queryset=models.Category.objects.all(), required=False)
     city = SlugRelatedFieldWithCreate(slug_field='name', queryset=models.City.objects.all())
     ranking = serializers.FloatField(min_value=0, max_value=5)
 
@@ -41,10 +41,19 @@ class RestaurantSerializer(serializers.ModelSerializer):
             'id', 'name', 'category', 'city', 'address', 'phone_number', 'restaurant_url', 'menu_url', 'ranking',
             'comment',
         )
+        extra_kwargs: dict = {
+            'menu_url': {
+                'validators': [],
+            }
+        }
 
     @transaction.atomic
     def create(self, validated_data: dict) -> models.Restaurant:
-        return models.Restaurant.objects.create(**validated_data)
+        lookup = {
+            'menu_url': validated_data.get('menu_url'),
+        }
+        restaurant, created = models.Restaurant.objects.update_or_create(defaults=validated_data, **lookup)
+        return restaurant
 
     @transaction.atomic
     def update(self, instance: models.Restaurant, validated_data: dict) -> models.Restaurant:
@@ -86,11 +95,11 @@ class DishSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data: dict) -> models.Dish:
         tags = validated_data.pop('tags', [])
-        restaurant = validated_data.get('restaurant')
 
         lookup = {
             'name': validated_data.get('name'),
-            'restaurant': restaurant,
+            'restaurant': validated_data.get('restaurant'),
+            'weight': validated_data.get('weight'),
         }
 
         dish, created = models.Dish.objects.update_or_create(defaults=validated_data, **lookup)

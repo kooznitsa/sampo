@@ -45,8 +45,8 @@ class Restaurant(DateTimeMixin):
     city = models.ForeignKey('City', verbose_name='Город', on_delete=models.CASCADE)
     address = models.CharField(verbose_name='Адрес', max_length=255)
     phone_number = models.CharField(verbose_name='Номер телефона', max_length=10, null=True, blank=True)
-    restaurant_url = models.URLField(verbose_name='Сайт ресторана', null=True, blank=True)
-    menu_url = models.URLField(verbose_name='Сайт меню', null=True, blank=True)
+    restaurant_url = models.URLField(verbose_name='Сайт ресторана', help_text='URL стороннего сайта', null=True, blank=True)
+    menu_url = models.URLField(verbose_name='Сайт меню', help_text='URL Яндекса', unique=True, null=True, blank=True, default=None)
     ranking = models.FloatField(verbose_name='Рейтинг', default=0.0)
     comment = models.TextField(verbose_name='Комментарий', null=True, blank=True)
     menu_update_date = models.DateField(verbose_name='Дата обновления меню', null=True, blank=True)
@@ -54,7 +54,6 @@ class Restaurant(DateTimeMixin):
     class Meta:
         verbose_name = 'Ресторан'
         verbose_name_plural = 'Рестораны'
-        unique_together = [['name', 'address']]
 
     def __str__(self) -> str:
         return self.name

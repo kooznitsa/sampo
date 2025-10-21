@@ -47,7 +47,7 @@ class RestaurantFactory(factory.django.DjangoModelFactory):
 
     class Meta:
         model = 'restaurant.Restaurant'
-        django_get_or_create = ('name', 'address')
+        django_get_or_create = ('menu_url',)
 
     @classmethod
     def as_payload(cls, **kwargs: Any) -> dict[str, Any]:
@@ -76,7 +76,7 @@ class DishFactory(factory.django.DjangoModelFactory):
 
     class Meta:
         model = 'restaurant.Dish'
-        django_get_or_create = ('name', 'restaurant')
+        django_get_or_create = ('name', 'restaurant', 'weight')
 
     @factory.post_generation
     def tags(self, create: bool, extracted: Any, **kwargs: dict[str, Any]) -> None:

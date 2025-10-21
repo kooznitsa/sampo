@@ -185,3 +185,17 @@ class TestRegex(TestCase):
             with self.subTest(quantity_string=quantity_string, expected=expected):
                 price = parsers.DishAmountParser().parse_quantity(quantity_string)
                 self.assertEqual(price, expected)
+
+    def test_parse_url(self) -> None:
+        cases = [
+            'https://yandex.ru/maps/org/microlot_coffee_to_go/168356715006/menu/',
+            'https://yandex.ru/maps/org/microlot_coffee_to_go/168356715006/gallery/',
+            'https://yandex.ru/maps/org/microlot_coffee_to_go/168356715006/',
+            'https://yandex.ru/maps/org/microlot_coffee_to_go/168356715006/reviews/',
+        ]
+        expected = 'https://yandex.ru/maps/org/microlot_coffee_to_go/168356715006/menu/'
+
+        for url_string in cases:
+            with self.subTest(url_string=url_string):
+                price = parsers.UrlParser().parse_url(url_string)
+                self.assertEqual(price, expected)
