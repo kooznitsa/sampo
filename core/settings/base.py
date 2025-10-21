@@ -1,6 +1,7 @@
 from datetime import timedelta
 import os
 from pathlib import Path
+import warnings
 
 # BASE
 
@@ -238,6 +239,8 @@ SIMPLE_JWT = {
 
 
 # SWAGGER
+
+warnings.filterwarnings('ignore', message='enum naming encountered a non-optimally resolvable collision')
 
 SPECTACULAR_SETTINGS = {
     'TITLE': 'Sampo API',

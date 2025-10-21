@@ -62,4 +62,4 @@ chmod +x release.sh
 
 ## Структура базы данных (основные таблицы)
 
-![Диаграмма базы данных](https://raw.githubusercontent.com/kooznitsa/sampo/refs/heads/main/db_diagram.png)
+![Диаграмма базы данных](./db_diagram.png)
