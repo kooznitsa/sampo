@@ -49,4 +49,4 @@ jobs:
         run: make mypyapp-ci APP=restaurant
 
       - name: Run tests
-        run: make testall
+        run: docker compose run --rm sampo_backend poetry run python manage.py test --settings=core.settings.test
