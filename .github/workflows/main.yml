@@ -49,5 +49,6 @@ jobs:
         run: make mypyapp-ci APP=restaurant
 
       - name: Run tests
-        run: docker compose -f ./deploy/compose.yml --env-file ./env/.env.local --profile test run --rm backend \
+        run: |
+          docker compose -f ./deploy/compose.yml --env-file ./env/.env.local --profile test run --rm backend \
           poetry run python manage.py test --settings=core.settings.test
