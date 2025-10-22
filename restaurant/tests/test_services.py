@@ -7,9 +7,9 @@ from django.test import tag, TestCase
 from django.utils import timezone
 
 from bs4 import BeautifulSoup
-import selenium
 
 from restaurant.enums import WeightEnum
+from restaurant.exceptions import MenuNotFoundException
 import restaurant.models as models
 import restaurant.services as services
 import restaurant.services.parsers as parsers
@@ -216,35 +216,18 @@ class TestRestaurantScraper(unittest.TestCase):
         'city': 'Санкт-Петербург',
         'address': 'Адмиралтейский просп., 6',
         'ranking': 4.9,
-        'menu_url': 'https://yandex.ru/maps/petrov_vodkin/69164245287/menu/',
+        'menu_url': 'https://yandex.ru/maps/org/petrov_vodkin/69164245287/menu/',
     }
     category = 'Ресторан'
     timeout = 5
 
-    @patch('restaurant.services.RestaurantScraper')
-    @patch('restaurant.services.DriverManager')
-    @patch('selenium.webdriver.Remote')
-    def test_dependencies_are_called(self, Remote: MagicMock, DriverManager: MagicMock, RestaurantScraper: MagicMock) -> None:
-        driver_manager = services.DriverManager()
-        driver = driver_manager.init()
-        services.RestaurantScraper(driver=driver, timeout=self.timeout).run()
-
-        assert Remote is selenium.webdriver.Remote
-        assert DriverManager is services.DriverManager
-        assert RestaurantScraper is services.RestaurantScraper
-
-        assert DriverManager.called
-        assert RestaurantScraper.called
-
-        driver.quit()
-
     @patch('restaurant.services.restaurant_scraper.BeautifulSoup')
     @patch.object(services.RestaurantScraper, 'write_data_to_db')
     @patch.object(services.RestaurantScraper, 'parse_card')
-    def test_calls_write_data_to_db(self, mock_parse: MagicMock, mock_write_db: MagicMock, mock_soup: MagicMock) -> None:
+    def test_calls_parser_and_writer(self, mock_parse: MagicMock, mock_write_db: MagicMock, mock_soup: MagicMock) -> None:
         mock_driver = MagicMock()
         mock_card = MagicMock()
-        mock_card.get_attribute.return_value = '<div>ok</div>'
+        mock_card.get_attribute.return_value = '<div>OK</div>'
         mock_driver.find_element.return_value = mock_card
 
         scraper = services.RestaurantScraper(driver=mock_driver, timeout=self.timeout, url=str(self.restaurant_data['menu_url']))
@@ -252,7 +235,7 @@ class TestRestaurantScraper(unittest.TestCase):
 
         scraper.run()
 
-        mock_driver.get.assert_called_once_with('https://yandex.ru/maps/petrov_vodkin/69164245287')
+        mock_driver.get.assert_called_once_with('https://yandex.ru/maps/org/petrov_vodkin/69164245287/')
         mock_parse.assert_called_once()
         mock_write_db.assert_called_once_with(mock_parse.return_value)
 
@@ -280,12 +263,12 @@ class TestRestaurantScraper(unittest.TestCase):
         mock_wait.return_value.until.assert_called_once()
 
     @patch('restaurant.services.restaurant_scraper.RestaurantParser')
-    def test_parse_card_returns_expected_dict(self, MockParser: MagicMock) -> None:
-        mock_parser = MockParser.return_value
-        mock_parser.get_name.return_value = self.restaurant_data['name']
-        mock_parser.get_address.return_value = self.restaurant_data['address']
-        mock_parser.get_ranking.return_value = self.restaurant_data['ranking']
-        mock_parser.get_link.return_value = self.restaurant_data['menu_url']
+    def test_parse_card_returns_expected_dict(self, mock_parser: MagicMock) -> None:
+        mp = mock_parser.return_value
+        mp.get_name.return_value = self.restaurant_data['name']
+        mp.get_address.return_value = self.restaurant_data['address']
+        mp.get_ranking.return_value = self.restaurant_data['ranking']
+        mp.get_link.return_value = self.restaurant_data['menu_url']
 
         html = f"""
             <div class="search-business-snippet-view">
@@ -316,11 +299,10 @@ class TestRestaurantScraper(unittest.TestCase):
 
         self.assertEqual(result, self.restaurant_data)
 
-        mock_parser.get_name.assert_called_once_with(soup)
-        mock_parser.get_address.assert_called_once_with(soup)
-        mock_parser.get_ranking.assert_called_once_with(soup)
+        mp.get_name.assert_called_once_with(soup)
+        mp.get_address.assert_called_once_with(soup)
+        mp.get_ranking.assert_called_once_with(soup)
 
-    @tag('new',)
     @patch('restaurant.services.restaurant_scraper.error_logger')
     @patch('restaurant.services.restaurant_scraper.info_logger')
     @patch('restaurant.services.restaurant_scraper.RestaurantSerializer')
@@ -407,12 +389,12 @@ class TestRestaurantScraper(unittest.TestCase):
 
     @patch('restaurant.services.restaurant_scraper.info_logger')
     @patch('restaurant.services.restaurant_scraper.RestaurantParser')
-    def test_parse_card_logs_info(self, MockParser: MagicMock, mock_logger: MagicMock) -> None:
-        mock_parser = MockParser.return_value
-        mock_parser.get_name.return_value = self.restaurant_data['name']
-        mock_parser.get_address.return_value = self.restaurant_data['address']
-        mock_parser.get_ranking.return_value = self.restaurant_data['ranking']
-        mock_parser.get_link.return_value = self.restaurant_data['menu_url']
+    def test_parse_card_logs_info(self, mock_parser: MagicMock, mock_logger: MagicMock) -> None:
+        mp = mock_parser.return_value
+        mp.get_name.return_value = self.restaurant_data['name']
+        mp.get_address.return_value = self.restaurant_data['address']
+        mp.get_ranking.return_value = self.restaurant_data['ranking']
+        mp.get_link.return_value = self.restaurant_data['menu_url']
 
         scraper = services.RestaurantScraper(driver=MagicMock(), timeout=self.timeout, url=str(self.restaurant_data['menu_url']))
         soup = BeautifulSoup('<div></div>', 'html.parser')
@@ -431,40 +413,43 @@ class TestMenuScraper(unittest.TestCase):
         'quantity': 1,
         'comment': 'сорбет из маргеланской редьки, яблоко, миндальные сливки',
     }
+    menu_url = 'https://yandex.ru/maps/org/petrov_vodkin/69164245287/menu/'
     timeout = 5
 
     def setUp(self) -> None:
         super().setUp()
         category = factories.CategoryFactory.create()
         city = factories.CityFactory.create()
-        factories.RestaurantFactory.create(category=category, city=city)
+        factories.RestaurantFactory.create(category=category, city=city, menu_url=self.menu_url)
+        self.restaurant = models.Restaurant.objects.filter(menu_url=self.menu_url).first()
 
-    @patch('restaurant.services.MenuScraper')
-    @patch('restaurant.services.DriverManager')
-    @patch('selenium.webdriver.Remote')
-    def test_dependencies_are_called(self, Remote: MagicMock, DriverManager: MagicMock, MenuScraper: MagicMock) -> None:
-        driver_manager = services.DriverManager()
-        driver = driver_manager.init()
-        restaurant = models.Restaurant.objects.first()
-        services.MenuScraper(restaurant=restaurant, driver=driver, timeout=self.timeout).run()
+    @patch('restaurant.services.restaurant_scraper.BeautifulSoup')
+    @patch.object(services.MenuScraper, 'write_data_to_db')
+    @patch.object(services.MenuScraper, 'parse_card')
+    def test_calls_parser_and_writer(self, mock_parse: MagicMock, mock_write_db: MagicMock, mock_soup: MagicMock) -> None:
+        mock_driver = MagicMock()
+        mock_card = MagicMock()
+        mock_card.get_attribute.return_value = '<div>OK</div>'
+        mock_card.text = 'Обновлено 5 октября 2025'
+        mock_driver.find_elements.return_value = [mock_card]
 
-        assert Remote is selenium.webdriver.Remote
-        assert DriverManager is services.DriverManager
-        assert MenuScraper is services.MenuScraper
+        scraper = services.MenuScraper(restaurant=self.restaurant, driver=mock_driver, timeout=self.timeout)
+        mock_parse.return_value = self.menu_data.copy()
 
-        assert DriverManager.called
-        assert MenuScraper.called
+        scraper.run()
 
-        driver.quit()
+        mock_driver.get.assert_called_once_with(self.restaurant.menu_url)
+        mock_parse.assert_called_once()
+        mock_write_db.assert_called_once_with(mock_parse.return_value)
 
     @patch('restaurant.services.menu_scraper.MenuParser')
-    def test_parse_card_returns_expected_dict(self, MockParser: MagicMock) -> None:
-        mock_parser = MockParser.return_value
-        mock_parser.get_name.return_value = self.menu_data['name']
-        mock_parser.get_price.return_value = self.menu_data['price']
-        mock_parser.get_weight.return_value = {'value': self.menu_data['weight'], 'unit': self.menu_data['weight_unit']}
-        mock_parser.get_quantity.return_value = self.menu_data['quantity']
-        mock_parser.get_description.return_value = self.menu_data['comment']
+    def test_parse_card_returns_expected_dict(self, mock_parser: MagicMock) -> None:
+        mp = mock_parser.return_value
+        mp.get_name.return_value = self.menu_data['name']
+        mp.get_price.return_value = self.menu_data['price']
+        mp.get_weight.return_value = {'value': self.menu_data['weight'], 'unit': self.menu_data['weight_unit']}
+        mp.get_quantity.return_value = self.menu_data['quantity']
+        mp.get_description.return_value = self.menu_data['comment']
 
         html = f"""
         <div class="business-full-items-grouped-view__item _view_grid">
@@ -493,44 +478,149 @@ class TestMenuScraper(unittest.TestCase):
         </div>
         """
 
-        scraper = services.MenuScraper(restaurant=models.Restaurant.objects.first(), driver=MagicMock(), timeout=self.timeout)
+        scraper = services.MenuScraper(restaurant=self.restaurant, driver=MagicMock(), timeout=self.timeout)
         soup = BeautifulSoup(html, 'html.parser')
         result = scraper.parse_card(soup)
 
         self.assertEqual(result, self.menu_data)
 
-        mock_parser.get_name.assert_called_once_with(soup)
-        mock_parser.get_price.assert_called_once_with(soup)
-        mock_parser.get_weight.assert_called_once_with(soup)
-        mock_parser.get_quantity.assert_called_once_with(soup)
-        mock_parser.get_description.assert_called_once_with(soup)
+        mp.get_name.assert_called_once_with(soup)
+        mp.get_price.assert_called_once_with(soup)
+        mp.get_weight.assert_called_once_with(soup)
+        mp.get_quantity.assert_called_once_with(soup)
+        mp.get_description.assert_called_once_with(soup)
 
-    def test_write_to_db_is_called(self) -> None:
-        with patch.object(services.MenuScraper, 'write_data_to_db', return_value=None) as db_writer:
-            restaurant = models.Restaurant.objects.first()
-            restaurant_scraper = services.MenuScraper(restaurant=restaurant, driver=MagicMock(), timeout=self.timeout)
-            restaurant_scraper.write_data_to_db(self.menu_data)
+    @patch('restaurant.services.menu_scraper.error_logger')
+    @patch('restaurant.services.menu_scraper.info_logger')
+    @patch('restaurant.services.menu_scraper.DishSerializer')
+    def test_write_data_to_db_parameterized(
+            self,
+            mock_serializer_cls: MagicMock,
+            mock_info_logger: MagicMock,
+            mock_error_logger: MagicMock,
+    ) -> None:
+        scraper = services.MenuScraper(restaurant=self.restaurant, driver=MagicMock(), timeout=self.timeout)
+        mock_serializer = mock_serializer_cls.return_value
 
-        db_writer.assert_called_once_with(self.menu_data)
+        test_cases = [
+            {
+                'name': 'валидные данные',
+                'data': self.menu_data.copy(),
+                'is_valid': True,
+                'expected_info': True,
+                'expected_error': False,
+                'expected_save': True,
+            },
+            {
+                'name': 'невалидный сериализатор',
+                'data': self.menu_data.copy(),
+                'is_valid': False,
+                'expected_info': False,
+                'expected_error': True,
+                'expected_save': False,
+            },
+            {
+                'name': 'отсутствует name',
+                'data': self.menu_data | {'name': None},
+                'is_valid': True,
+                'expected_info': False,
+                'expected_error': False,
+                'expected_save': False,
+            },
+        ]
+
+        for case in test_cases:
+            with self.subTest(case=case['name']):
+                mock_serializer_cls.reset_mock()
+                mock_info_logger.reset_mock()
+                mock_error_logger.reset_mock()
+
+                mock_serializer.is_valid.return_value = case['is_valid']
+                mock_serializer.errors = {'name': ['Required field']}
+                mock_serializer.save.return_value.id = 1
+                mock_serializer.save.return_value.name = case['data'].get('name')  # type: ignore[attr-defined]
+
+                scraper.write_data_to_db(case['data'])
+
+                if case['data'].get('name'):  # type: ignore[attr-defined]
+                    mock_serializer_cls.assert_called_once_with(data=case['data'])
+                    mock_serializer.is_valid.assert_called_once()
+                else:
+                    mock_serializer_cls.assert_not_called()
+
+                if case['expected_info']:
+                    mock_info_logger.info.assert_called()
+                else:
+                    mock_info_logger.info.assert_not_called()
+
+                if case['expected_error']:
+                    mock_error_logger.error.assert_called_once_with({'name': ['Required field']})
+                else:
+                    mock_error_logger.error.assert_not_called()
+
+                if case['expected_save']:
+                    mock_serializer.save.assert_called_once()
+                else:
+                    mock_serializer.save.assert_not_called()
+
+    @patch('restaurant.services.menu_scraper.error_logger')
+    def test_run_logs_exception_on_selenium_error(self, mock_logger: MagicMock) -> None:
+        mock_driver = MagicMock()
+        mock_driver.find_element.side_effect = MenuNotFoundException(f'Menu not found for URL {self.restaurant.menu_url}')
+
+        scraper = services.MenuScraper(restaurant=self.restaurant, driver=mock_driver, timeout=self.timeout)
+        scraper.run()
+
+        mock_logger.error.assert_called()
+        assert f'Menu not found for URL {self.restaurant.menu_url}' in mock_logger.error.call_args[0][0]
+
+    @patch('restaurant.services.menu_scraper.info_logger')
+    @patch('restaurant.services.menu_scraper.MenuParser')
+    def test_parse_card_logs_info(self, mock_parser: MagicMock, mock_logger: MagicMock) -> None:
+        mp = mock_parser.return_value
+        mp.get_name.return_value = self.menu_data['name']
+        mp.get_price.return_value = self.menu_data['price']
+        mp.get_weight.return_value = {'value': self.menu_data['weight'], 'amount': self.menu_data['weight_unit']}
+        mp.get_quantity.return_value = self.menu_data['quantity']
+
+        scraper = services.MenuScraper(restaurant=self.restaurant, driver=MagicMock(), timeout=self.timeout)
+        soup = BeautifulSoup('<div></div>', 'html.parser')
+        scraper.parse_card(soup)
+
+        mock_logger.info.assert_called_once()
 
 
 @tag('services', 'scrapers', 'link_collector')
 class TestLinkCollector(unittest.TestCase):
+    restaurant_data = {
+        'name': 'Petrov-Vodkin',
+        'city': 'Санкт-Петербург',
+        'address': 'Адмиралтейский просп., 6',
+        'ranking': 4.9,
+        'menu_url': 'https://yandex.ru/maps/org/petrov_vodkin/69164245287/menu/',
+    }
     timeout = 5
 
-    @patch('restaurant.services.LinkCollector')
-    @patch('restaurant.services.DriverManager')
-    @patch('selenium.webdriver.Remote')
-    def test_dependencies_are_called(self, Remote: MagicMock, DriverManager: MagicMock, LinkCollector: MagicMock) -> None:
-        driver_manager = services.DriverManager()
-        driver = driver_manager.init()
-        services.LinkCollector(driver=driver, timeout=self.timeout).run()
+    @patch('restaurant.services.link_collector.BeautifulSoup')
+    @patch.object(services.RestaurantScraper, 'write_data_to_db')
+    @patch.object(services.RestaurantScraper, 'parse_card')
+    def test_calls_scraper(self, mock_parse: MagicMock, mock_write_db: MagicMock, mock_soup_cls: MagicMock) -> None:
+        mock_driver = MagicMock()
+        mock_driver.page_source = '<html></html>'
 
-        assert Remote is selenium.webdriver.Remote
-        assert DriverManager is services.DriverManager
-        assert LinkCollector is services.LinkCollector
+        mock_soup = MagicMock()
+        mock_card = MagicMock()
+        mock_soup.select.return_value = [mock_card]
+        mock_soup_cls.return_value = mock_soup
 
-        assert DriverManager.called
-        assert LinkCollector.called
+        mock_parse.return_value = self.restaurant_data
 
-        driver.quit()
+        link_collector = services.LinkCollector(driver=mock_driver, timeout=self.timeout)
+        link_collector.categories = {'restaurant': 'Ресторан'}
+
+        with patch.object(link_collector, '_generate_coordinates', return_value=[(30.3, 59.9)]):
+            link_collector.run()
+
+        mock_driver.get.assert_called_once()
+        mock_parse.assert_called_once_with(mock_card)
+        mock_write_db.assert_called_once_with(mock_parse.return_value, 'Ресторан')

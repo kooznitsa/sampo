@@ -23,6 +23,7 @@ help:
 	@echo "  build                                           to build Docker containers"
 	@echo "  checkmigrations                                 to check migrations"
 	@echo "  collect_links                                   to collect restaurant links"
+	@echo "  coverage                                        to get test coverage report"
 	@echo "  createsuperuser                                 to create super user"
 	@echo "  dump                                            to create database dump"
 	@echo "  linter                                          to run linter"
@@ -179,6 +180,11 @@ testall:
 .PHONY: testapp
 testapp:
 	$(DOCKER_EXEC) $(MANAGE) test $(APP).tests --tag=$(TAG) --settings=core.settings.test
+
+# Get coverage report
+.PHONY: coverage
+coverage:
+	$(DOCKER_EXEC) poetry run coverage report -m
 
 
 # -------------- CUSTOM COMMANDS --------------

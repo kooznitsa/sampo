@@ -10,6 +10,10 @@ jobs:
   build:
     runs-on: ubuntu-22.04
 
+    env:
+      APP_NAME: sampo
+      DOCKER_BUILDKIT: 1
+
     steps:
       - uses: actions/checkout@v4
 
@@ -43,3 +47,6 @@ jobs:
 
       - name: Run mypy
         run: make mypyapp-ci APP=restaurant
+
+      - name: Run tests
+        run: make testall
