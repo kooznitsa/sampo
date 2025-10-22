@@ -27,9 +27,12 @@ class MenuScraper:
         self.timeout = timeout
 
     def run(self) -> None:
-        self.driver.get(self.url)
-        self.wait()
-        self.parse_menu_html()
+        try:
+            self.driver.get(self.url)
+            self.wait()
+            self.parse_menu_html()
+        except Exception as e:
+            error_logger.error(str(e))
 
     def wait(self) -> None:
         wait = WebDriverWait(self.driver, self.timeout)
@@ -68,7 +71,7 @@ class MenuScraper:
 
     def parse_card(self, soup: BeautifulSoup) -> dict:
         weight_data = self.parser.get_weight(soup)
-        return {
+        result = {
             'name': self.parser.get_name(soup),
             'price': self.parser.get_price(soup),
             'weight': weight_data.get('value') if weight_data else None,
@@ -76,6 +79,8 @@ class MenuScraper:
             'quantity': self.parser.get_quantity(soup),
             'comment': self.parser.get_description(soup),
         }
+        info_logger.info(result)
+        return result
 
     @transaction.atomic
     def write_data_to_db(self, data: dict) -> None:

@@ -1,4 +1,5 @@
 import logging
+import re
 
 from bs4 import BeautifulSoup
 from bs4.element import Tag
@@ -24,7 +25,7 @@ class RestaurantScraper:
 
     def run(self) -> None:
         if self.url:
-            self.driver.get(self.url.replace('/menu/', ''))
+            self.driver.get(re.sub(r'/menu/?$', '/', self.url))
             self.wait()
             try:
                 card = self.driver.find_element(By.CSS_SELECTOR, self.parser.one_card_tag)

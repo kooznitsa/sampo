@@ -10,6 +10,10 @@ jobs:
   build:
     runs-on: ubuntu-22.04
 
+    env:
+      APP_NAME: sampo
+      DOCKER_BUILDKIT: 1
+
     steps:
       - uses: actions/checkout@v4
 
@@ -43,3 +47,10 @@ jobs:
 
       - name: Run mypy
         run: make mypyapp-ci APP=restaurant
+
+#      - name: Run tests
+#        env:
+#          ENV: local
+#        run: |
+#          docker compose -f ./deploy/compose.yml --env-file ./env/.env.local --profile test run --rm backend \
+#          poetry run python manage.py test --settings=core.settings.test

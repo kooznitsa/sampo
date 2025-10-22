@@ -27,7 +27,7 @@ services:
     volumes:
       - ../:/home/app
       - static-volume:/home/app/staticfiles
-    profiles: [main, secondary]
+    profiles: [main, secondary, test]
 
   postgres:
     <<: *app-main
@@ -43,7 +43,7 @@ services:
     volumes:
       - db-postgres:/var/lib/postgresql/data
       - ../scripts/create_databases.sql:/docker-entrypoint-initdb.d/create_databases.sql
-    profiles: [main, secondary]
+    profiles: [main, secondary, test]
 
   test_postgres:
     <<: *app-main
@@ -63,7 +63,7 @@ services:
     volumes:
       - test-postgres:/var/lib/postgresql/data
       - ../scripts/create_databases.sql:/docker-entrypoint-initdb.d/create_databases.sql
-    profiles: [main, secondary]
+    profiles: [main, secondary, test]
 
   nginx:
     <<: *app-main

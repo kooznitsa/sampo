@@ -207,6 +207,16 @@ class DishApiTestCase(AuthenticatedAPITestCase):
         self.assertEqual(response.data.get('name'), self.dish_name)
         self.assertEqual(updated_dish.name, self.dish_name)
 
+    def test_update_dish_with_not_unique_fields(self) -> None:
+        dish = models.Dish.objects.first()
+        response = self.client.put(
+            f'{BASE_URL}{self.uri}{dish.pk}/',
+            self.payload | {'restaurant': dish.restaurant.id, 'weight': dish.weight},
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
     def test_partially_update_dish(self) -> None:
         dish = models.Dish.objects.first()
         response = self.client.patch(f'{BASE_URL}{self.uri}{dish.pk}/', {'name': self.dish_name})
@@ -216,10 +226,23 @@ class DishApiTestCase(AuthenticatedAPITestCase):
         self.assertEqual(response.data.get('name'), self.dish_name)
         self.assertEqual(updated_dish.name, self.dish_name)
 
+    def test_partially_update_dish_with_not_unique_fields(self) -> None:
+        dish = models.Dish.objects.first()
+        response = self.client.patch(
+            f'{BASE_URL}{self.uri}{dish.pk}/',
+            self.payload | {'restaurant': dish.restaurant.id, 'weight': dish.weight},
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
     def test_update_dish_tags(self) -> None:
         dish = models.Dish.objects.first()
-        payload = self.payload | {'tags': [self.dish_name]}
-        response = self.client.put(f'{BASE_URL}{self.uri}{dish.pk}/', payload, format='json')
+        response = self.client.put(
+            f'{BASE_URL}{self.uri}{dish.pk}/',
+            self.payload | {'tags': [self.dish_name]},
+            format='json',
+        )
         updated_dish = models.Dish.objects.first()
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
