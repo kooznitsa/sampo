@@ -3,6 +3,7 @@ from django.db import models
 from djmoney.models.fields import MoneyField
 
 from restaurant.enums import WeightEnum
+import restaurant.querysets as querysets
 from restaurant.mixins import DateTimeMixin
 
 
@@ -41,8 +42,8 @@ class Tag(models.Model):
 
 class Restaurant(DateTimeMixin):
     name = models.CharField(verbose_name='Название ресторана', max_length=100)
-    category = models.ForeignKey('Category', verbose_name='Категория', on_delete=models.CASCADE, null=True, blank=True)
-    city = models.ForeignKey('City', verbose_name='Город', on_delete=models.CASCADE)
+    category = models.ForeignKey('Category', verbose_name='Категория', related_name='restaurants', on_delete=models.CASCADE, null=True, blank=True)
+    city = models.ForeignKey('City', verbose_name='Город', related_name='restaurants', on_delete=models.CASCADE)
     address = models.CharField(verbose_name='Адрес', max_length=255)
     phone_number = models.CharField(verbose_name='Номер телефона', max_length=10, null=True, blank=True)
     restaurant_url = models.URLField(verbose_name='Сайт ресторана', help_text='URL стороннего сайта', null=True, blank=True)
@@ -50,6 +51,8 @@ class Restaurant(DateTimeMixin):
     ranking = models.FloatField(verbose_name='Рейтинг', default=0.0)
     comment = models.TextField(verbose_name='Комментарий', null=True, blank=True)
     menu_update_date = models.DateField(verbose_name='Дата обновления меню', null=True, blank=True)
+
+    objects = querysets.RestaurantQuerySet.as_manager()
 
     class Meta:
         verbose_name = 'Ресторан'
@@ -62,7 +65,7 @@ class Restaurant(DateTimeMixin):
 class Dish(DateTimeMixin):
     name = models.CharField(verbose_name='Название блюда', max_length=255)
     price = MoneyField(verbose_name='Цена', max_digits=8, decimal_places=2, default_currency='RUB')
-    restaurant = models.ForeignKey('Restaurant', verbose_name='Ресторан', on_delete=models.CASCADE)
+    restaurant = models.ForeignKey('Restaurant', verbose_name='Ресторан', related_name='dishes', on_delete=models.CASCADE)
     weight = models.FloatField(verbose_name='Вес или объём', null=True, blank=True)
     weight_unit = models.CharField(
         verbose_name='Единица измерения веса или объёма',

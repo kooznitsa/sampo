@@ -45,7 +45,8 @@ class RestaurantApiTestCase(AuthenticatedAPITestCase):
         super().setUp()
         category = factories.CategoryFactory.create()
         city = factories.CityFactory.create()
-        factories.RestaurantFactory.create(category=category, city=city)
+        restaurant = factories.RestaurantFactory.create(category=category, city=city)
+        factories.DishFactory.create(restaurant=restaurant)
 
     def test_get_restaurant_detail(self) -> None:
         restaurant = models.Restaurant.objects.first()
