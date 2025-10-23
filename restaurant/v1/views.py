@@ -1,5 +1,6 @@
 from typing import Any
 
+from django.db.models.query import QuerySet
 from django.shortcuts import get_object_or_404
 
 from drf_spectacular.types import OpenApiTypes
@@ -36,7 +37,12 @@ import restaurant.v1.serializers as serializers
 class RestaurantViewSet(viewsets.ModelViewSet):
     serializer_class = serializers.RestaurantSerializer
     model = serializer_class.Meta.model
-    queryset = model.objects.select_related('category', 'city')
+    queryset = model.objects.select_related('category', 'city').order_by('pk')
+
+    def get_queryset(self) -> QuerySet:
+        if self.action == 'list':
+            return self.queryset.with_dishes()
+        return self.queryset
 
     @action(detail=True, methods=['post'], url_path='scrape_menu')
     def scrape_menu(self, request: Request, *args: Any, **kwargs: Any) -> Response:
