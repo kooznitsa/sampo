@@ -3,7 +3,7 @@ from django.db import models
 from djmoney.models.fields import MoneyField
 
 from restaurant.enums import WeightEnum
-import restaurant.managers as managers
+import restaurant.querysets as querysets
 from restaurant.mixins import DateTimeMixin
 
 
@@ -52,7 +52,7 @@ class Restaurant(DateTimeMixin):
     comment = models.TextField(verbose_name='Комментарий', null=True, blank=True)
     menu_update_date = models.DateField(verbose_name='Дата обновления меню', null=True, blank=True)
 
-    objects = managers.RestaurantQuerySet.as_manager()
+    objects = querysets.RestaurantQuerySet.as_manager()
 
     class Meta:
         verbose_name = 'Ресторан'
