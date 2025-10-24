@@ -9,7 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Restaurant link scraper ([#10](https://github.com/kooznitsa/sampo/pull/10)).
+- Restaurant menu scraper ([#11](https://github.com/kooznitsa/sampo/pull/11)).
+- Commands to scrape restaurant data and menu ([#13](https://github.com/kooznitsa/sampo/pull/13)).
+- Admin actions to scrape restaurant data and menu ([#14](https://github.com/kooznitsa/sampo/pull/14), [#15](https://github.com/kooznitsa/sampo/pull/15)).
+- Admin filters and admin configuration ([#18](https://github.com/kooznitsa/sampo/pull/18)).
+- Tests for services ([#16](https://github.com/kooznitsa/sampo/pull/16)).
+
 ### Fixed
+
+- Database configuration in Docker Compose ([#15](https://github.com/kooznitsa/sampo/pull/15)).
 
 ### Changed
 
@@ -20,8 +29,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Environment and deploy.
-- JWT token authentication.
-- Restaurant CRUD methods.
-- Dish CRUD methods.
-- Tests for models, API and serializers.
-- Admin configuration.
+- JWT token authentication ([#3](https://github.com/kooznitsa/sampo/pull/3)).
+- Restaurant CRUD methods ([#2](https://github.com/kooznitsa/sampo/pull/2)).
+- Dish CRUD methods ([#8](https://github.com/kooznitsa/sampo/pull/8)).
+- Tests for models, API and serializers ([#7](https://github.com/kooznitsa/sampo/pull/7)).
+- Admin configuration ([#1](https://github.com/kooznitsa/sampo/pull/1)).
