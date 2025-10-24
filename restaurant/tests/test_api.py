@@ -36,8 +36,8 @@ class AuthenticatedAPITestCase(TestCase):
 class RestaurantApiTestCase(AuthenticatedAPITestCase):
     uri = 'restaurant/'
     restaurant_name = 'Лапшичная №1'
-    restaurant_address = 'Набережная канала Грибоедова'
-    payload = factories.RestaurantFactory.as_payload(name=restaurant_name, address=restaurant_address)
+    menu_url = 'https://yandex.ru/maps/org/nola_jazz_bar/233512176817/menu/'
+    payload = factories.RestaurantFactory.as_payload(menu_url=menu_url)
     wrong_ranking = 7.0
     nonexistent_id = 123
 
@@ -45,7 +45,8 @@ class RestaurantApiTestCase(AuthenticatedAPITestCase):
         super().setUp()
         category = factories.CategoryFactory.create()
         city = factories.CityFactory.create()
-        factories.RestaurantFactory.create(category=category, city=city)
+        restaurant = factories.RestaurantFactory.create(category=category, city=city)
+        factories.DishFactory.create(restaurant=restaurant)
 
     def test_get_restaurant_detail(self) -> None:
         restaurant = models.Restaurant.objects.first()
@@ -72,20 +73,19 @@ class RestaurantApiTestCase(AuthenticatedAPITestCase):
 
     def test_create_restaurant(self) -> None:
         response = self.client.post(f'{BASE_URL}{self.uri}', self.payload)
-        created_restaurant = models.Restaurant.objects.filter(name=self.restaurant_name, address=self.restaurant_address).first()
+        created_restaurant = models.Restaurant.objects.filter(menu_url=self.menu_url).first()
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(response.data.get('name'), self.restaurant_name)
-        self.assertEqual(response.data.get('address'), self.restaurant_address)
+        self.assertEqual(response.data.get('menu_url'), self.menu_url)
         self.assertIsNotNone(created_restaurant)
 
-    def test_create_not_unique_restaurant_fails(self) -> None:
+    def test_create_not_unique_restaurant(self) -> None:
         category = models.Category.objects.first()
         city = models.City.objects.first()
-        factories.RestaurantFactory.create(category=category, city=city, name=self.restaurant_name, address=self.restaurant_address)
+        factories.RestaurantFactory.create(category=category, city=city, menu_url=self.menu_url)
         response = self.client.post(f'{BASE_URL}{self.uri}', self.payload)
 
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
     def test_create_restaurant_with_wrong_ranking_fails(self) -> None:
         payload = self.payload | {'ranking': self.wrong_ranking}
@@ -95,24 +95,19 @@ class RestaurantApiTestCase(AuthenticatedAPITestCase):
 
     def test_update_restaurant(self) -> None:
         restaurant = models.Restaurant.objects.first()
-        response = self.client.put(f'{BASE_URL}{self.uri}{restaurant.pk}/', self.payload)
+        payload = self.payload | {'name': self.restaurant_name}
+        response = self.client.put(f'{BASE_URL}{self.uri}{restaurant.pk}/', payload)
         updated_restaurant = models.Restaurant.objects.first()
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data.get('name'), self.restaurant_name)
-        self.assertEqual(response.data.get('address'), self.restaurant_address)
         self.assertEqual(updated_restaurant.name, self.restaurant_name)
-        self.assertEqual(updated_restaurant.address, self.restaurant_address)
 
-    def test_update_restaurant_with_not_unique_fields_fails(self) -> None:
-        category = models.Category.objects.first()
-        city = models.City.objects.first()
-        factories.RestaurantFactory.create(category=category, city=city, name=self.restaurant_name, address=self.restaurant_address)
+    def test_update_restaurant_with_not_unique_fields(self) -> None:
         restaurant = models.Restaurant.objects.first()
-        self.payload = {'name': self.restaurant_name, 'address': self.restaurant_address}
         response = self.client.put(f'{BASE_URL}{self.uri}{restaurant.pk}/', self.payload)
 
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_partially_update_restaurant(self) -> None:
         restaurant = models.Restaurant.objects.first()
@@ -123,17 +118,14 @@ class RestaurantApiTestCase(AuthenticatedAPITestCase):
         self.assertEqual(response.data.get('name'), self.restaurant_name)
         self.assertEqual(updated_restaurant.name, self.restaurant_name)
 
-    def test_partially_update_restaurant_with_not_unique_fields_fails(self) -> None:
-        category = models.Category.objects.first()
-        city = models.City.objects.first()
-        factories.RestaurantFactory.create(category=category, city=city, name=self.restaurant_name, address=self.restaurant_address)
+    def test_partially_update_restaurant_with_not_unique_fields(self) -> None:
         restaurant = models.Restaurant.objects.first()
         response = self.client.patch(
             f'{BASE_URL}{self.uri}{restaurant.pk}/',
-            {'name': self.restaurant_name, 'address': self.restaurant_address},
+            {'menu_url': self.menu_url},
         )
 
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_partially_update_restaurant_with_wrong_ranking_fails(self) -> None:
         restaurant = models.Restaurant.objects.first()
@@ -216,6 +208,16 @@ class DishApiTestCase(AuthenticatedAPITestCase):
         self.assertEqual(response.data.get('name'), self.dish_name)
         self.assertEqual(updated_dish.name, self.dish_name)
 
+    def test_update_dish_with_not_unique_fields(self) -> None:
+        dish = models.Dish.objects.first()
+        response = self.client.put(
+            f'{BASE_URL}{self.uri}{dish.pk}/',
+            self.payload | {'restaurant': dish.restaurant.id, 'weight': dish.weight},
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
     def test_partially_update_dish(self) -> None:
         dish = models.Dish.objects.first()
         response = self.client.patch(f'{BASE_URL}{self.uri}{dish.pk}/', {'name': self.dish_name})
@@ -225,10 +227,23 @@ class DishApiTestCase(AuthenticatedAPITestCase):
         self.assertEqual(response.data.get('name'), self.dish_name)
         self.assertEqual(updated_dish.name, self.dish_name)
 
+    def test_partially_update_dish_with_not_unique_fields(self) -> None:
+        dish = models.Dish.objects.first()
+        response = self.client.patch(
+            f'{BASE_URL}{self.uri}{dish.pk}/',
+            self.payload | {'restaurant': dish.restaurant.id, 'weight': dish.weight},
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
     def test_update_dish_tags(self) -> None:
         dish = models.Dish.objects.first()
-        payload = self.payload | {'tags': [self.dish_name]}
-        response = self.client.put(f'{BASE_URL}{self.uri}{dish.pk}/', payload, format='json')
+        response = self.client.put(
+            f'{BASE_URL}{self.uri}{dish.pk}/',
+            self.payload | {'tags': [self.dish_name]},
+            format='json',
+        )
         updated_dish = models.Dish.objects.first()
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)

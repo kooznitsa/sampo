@@ -1,6 +1,7 @@
 from datetime import timedelta
 import os
 from pathlib import Path
+import warnings
 
 # BASE
 
@@ -211,7 +212,7 @@ LOGGING = {
 # DRF
 
 REST_FRAMEWORK = {
-    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+    'DEFAULT_SCHEMA_CLASS': 'drf_standardized_errors.openapi.AutoSchema',
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
     'PAGE_SIZE': 100,
     'EXCEPTION_HANDLER': 'drf_standardized_errors.handler.exception_handler',
@@ -239,6 +240,8 @@ SIMPLE_JWT = {
 
 # SWAGGER
 
+warnings.filterwarnings('ignore', message='enum naming encountered a non-optimally resolvable collision')
+
 SPECTACULAR_SETTINGS = {
     'TITLE': 'Sampo API',
     'DESCRIPTION': 'Endpoints for Sampo API',
@@ -246,7 +249,7 @@ SPECTACULAR_SETTINGS = {
     'SERVE_INCLUDE_SCHEMA': False,
     'CONTACT': {
         'name': 'kooznitsa',
-        'url': 't.me/kooznitsa',
+        'url': 'https://t.me/kooznitsa',
     },
     'LICENSE': {'name': 'BSD License'},
     'SERVE_PUBLIC': True,
@@ -268,3 +271,9 @@ SPECTACULAR_SETTINGS = {
         'ErrorCode500Enum': 'drf_standardized_errors.openapi_serializers.ErrorCode500Enum.choices',
     },
 }
+
+
+# CELERY
+
+CELERY_BROKER_URL = 'redis://redis:6379/0'
+CELERY_RESULT_BACKEND = 'redis://redis:6379/0'

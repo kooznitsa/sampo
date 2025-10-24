@@ -5,6 +5,8 @@ from factory import fuzzy
 
 from django.contrib.auth.models import User
 
+from restaurant.enums import WeightEnum
+
 DEFAULT_PASSWORD = 'defaultpassword'
 
 
@@ -45,7 +47,7 @@ class RestaurantFactory(factory.django.DjangoModelFactory):
 
     class Meta:
         model = 'restaurant.Restaurant'
-        django_get_or_create = ('name', 'address')
+        django_get_or_create = ('menu_url',)
 
     @classmethod
     def as_payload(cls, **kwargs: Any) -> dict[str, Any]:
@@ -67,13 +69,14 @@ class DishFactory(factory.django.DjangoModelFactory):
     name = factory.Faker('word')
     price = fuzzy.FuzzyDecimal(200.0, 5000.0, precision=2)
     restaurant = factory.SubFactory(RestaurantFactory)
-    weight_grams = fuzzy.FuzzyInteger(100, 1000)
+    weight = fuzzy.FuzzyFloat(100.0, 1000.0, precision=1)
+    weight_unit = WeightEnum.G
     quantity = fuzzy.FuzzyInteger(1, 100)
     comment = factory.Faker('text')
 
     class Meta:
         model = 'restaurant.Dish'
-        django_get_or_create = ('name', 'restaurant')
+        django_get_or_create = ('name', 'restaurant', 'weight')
 
     @factory.post_generation
     def tags(self, create: bool, extracted: Any, **kwargs: dict[str, Any]) -> None:
@@ -93,7 +96,8 @@ class DishFactory(factory.django.DjangoModelFactory):
             'name': obj.name,
             'price': {'amount': float(obj.price.amount), 'currency': str(obj.price.currency)},
             'restaurant': obj.restaurant.id,
-            'weight_grams': obj.weight_grams,
+            'weight': obj.weight,
+            'weight_unit': obj.weight_unit,
             'quantity': obj.quantity,
             'comment': obj.comment,
             'tags': [str(tag) for tag in tags],

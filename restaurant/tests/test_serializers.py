@@ -9,11 +9,12 @@ import restaurant.tests.factories as factories
 class RestaurantSerializerTestCase(TestCase):
     restaurant_name = 'Лапшичная №1'
     restaurant_address = 'Набережная канала Грибоедова'
+    restaurant_ranking = 4.5
 
     def setUp(self) -> None:
         category = factories.CategoryFactory.create()
         city = factories.CityFactory.create()
-        factories.RestaurantFactory.create(category=category, city=city)
+        factories.RestaurantFactory.create(category=category, city=city, ranking=5.0)
 
     def test_restaurant_serializer_create(self) -> None:
         restaurant = factories.RestaurantFactory.as_payload(name=self.restaurant_name, address=self.restaurant_address)
@@ -56,10 +57,27 @@ class RestaurantSerializerTestCase(TestCase):
         self.assertIsNotNone(updated_restaurant.ranking)
         self.assertIsNotNone(updated_restaurant.comment)
 
+    def test_restaurant_is_updated_when_creating_double(self) -> None:
+        restaurant = models.Restaurant.objects.first()
+        data = factories.RestaurantFactory.as_payload(
+            name=restaurant.name, address=restaurant.address, category=restaurant.category, city=restaurant.city,
+            menu_url=restaurant.menu_url, ranking=self.restaurant_ranking,
+        )
+        serializer = serializers.RestaurantSerializer(data=data, partial=True)
+        self.assertTrue(serializer.is_valid(), serializer.errors)
+
+        restaurant_double = serializer.save()
+        unique_restaurants = models.Restaurant.objects.filter(menu_url=restaurant.menu_url)
+
+        self.assertEqual(unique_restaurants.count(), 1)
+        self.assertEqual(restaurant_double.id, restaurant.id)
+        self.assertEqual(unique_restaurants.first().ranking, self.restaurant_ranking)
+
 
 @tag('dish', 'dish_serializer')
 class DishSerializerTestCase(TestCase):
     dish_name = 'Суп'
+    dish_comment = 'Очень вкусный суп'
 
     def setUp(self) -> None:
         category = factories.CategoryFactory.create()
@@ -69,7 +87,7 @@ class DishSerializerTestCase(TestCase):
         dish = factories.DishFactory.create(restaurant=restaurant)
         dish.tags.add(tag)
 
-    def test_restaurant_serializer_create(self) -> None:
+    def test_dish_serializer_create(self) -> None:
         restaurant = models.Restaurant.objects.first()
         dish = factories.DishFactory.as_payload(name=self.dish_name, restaurant=restaurant)
         serializer = serializers.DishSerializer(data=dish)
@@ -83,7 +101,7 @@ class DishSerializerTestCase(TestCase):
         self.assertEqual(created_dish.name, self.dish_name)
         self.assertIsNotNone(created_dish.price)
         self.assertIsNotNone(created_dish.restaurant)
-        self.assertIsNotNone(created_dish.weight_grams)
+        self.assertIsNotNone(created_dish.weight)
         self.assertIsNotNone(created_dish.quantity)
         self.assertIsNotNone(created_dish.comment)
         self.assertTrue(created_dish.tags)
@@ -102,7 +120,22 @@ class DishSerializerTestCase(TestCase):
         self.assertEqual(updated_dish.name, self.dish_name)
         self.assertIsNotNone(updated_dish.price)
         self.assertIsNotNone(updated_dish.restaurant)
-        self.assertIsNotNone(updated_dish.weight_grams)
+        self.assertIsNotNone(updated_dish.weight)
         self.assertIsNotNone(updated_dish.quantity)
         self.assertIsNotNone(updated_dish.comment)
         self.assertTrue(updated_dish.tags)
+
+    def test_dish_is_updated_when_creating_double(self) -> None:
+        dish = models.Dish.objects.first()
+        data = factories.DishFactory.as_payload(
+            name=dish.name, restaurant=dish.restaurant, weight=dish.weight, price=dish.price, comment=self.dish_comment,
+        )
+        serializer = serializers.DishSerializer(data=data, partial=True)
+        self.assertTrue(serializer.is_valid(), serializer.errors)
+
+        dish_double = serializer.save()
+        unique_dishes = models.Dish.objects.filter(name=dish.name, restaurant=dish.restaurant, weight=dish.weight)
+
+        self.assertEqual(unique_dishes.count(), 1)
+        self.assertEqual(dish_double.id, dish.id)
+        self.assertEqual(unique_dishes.first().comment, self.dish_comment)

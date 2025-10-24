@@ -31,9 +31,9 @@ class SlugRelatedFieldWithCreate(SlugRelatedField):
 
 
 class RestaurantSerializer(serializers.ModelSerializer):
-    category = SlugRelatedFieldWithCreate(slug_field='name', queryset=models.Category.objects.all())
+    category = SlugRelatedFieldWithCreate(slug_field='name', queryset=models.Category.objects.all(), required=False)
     city = SlugRelatedFieldWithCreate(slug_field='name', queryset=models.City.objects.all())
-    ranking = serializers.IntegerField(min_value=0, max_value=5)
+    ranking = serializers.FloatField(min_value=0, max_value=5)
 
     class Meta:
         model = models.Restaurant
@@ -41,10 +41,19 @@ class RestaurantSerializer(serializers.ModelSerializer):
             'id', 'name', 'category', 'city', 'address', 'phone_number', 'restaurant_url', 'menu_url', 'ranking',
             'comment',
         )
+        extra_kwargs: dict = {
+            'menu_url': {
+                'validators': [],
+            }
+        }
 
     @transaction.atomic
     def create(self, validated_data: dict) -> models.Restaurant:
-        return models.Restaurant.objects.create(**validated_data)
+        lookup = {
+            'menu_url': validated_data.get('menu_url'),
+        }
+        restaurant, created = models.Restaurant.objects.update_or_create(defaults=validated_data, **lookup)
+        return restaurant
 
     @transaction.atomic
     def update(self, instance: models.Restaurant, validated_data: dict) -> models.Restaurant:
@@ -72,14 +81,34 @@ class DishSerializer(serializers.ModelSerializer):
         write_only=True,
     )
     price = MoneyField()
-    tags = SlugRelatedFieldWithCreate(slug_field='name', queryset=models.Tag.objects.all(), many=True)
+    tags = SlugRelatedFieldWithCreate(slug_field='name', queryset=models.Tag.objects.all(), many=True, required=False)
 
     class Meta:
         model = models.Dish
-        fields = ('id', 'name', 'price', 'restaurant', 'weight_grams', 'quantity', 'comment', 'tags')
+        fields = ('id', 'name', 'price', 'restaurant', 'weight', 'weight_unit', 'quantity', 'comment', 'tags')
 
     def to_representation(self, instance: models.Dish) -> dict:
         rep = super().to_representation(instance)
         rep['restaurant'] = RestaurantShortSerializer(instance.restaurant, context=self.context).data
         rep['tags'] = TagSerializer(instance.tags.all(), many=True, context=self.context).data
         return rep
+
+    def create(self, validated_data: dict) -> models.Dish:
+        tags = validated_data.pop('tags', [])
+
+        lookup = {
+            'name': validated_data.get('name'),
+            'restaurant': validated_data.get('restaurant'),
+            'weight': validated_data.get('weight'),
+        }
+
+        dish, created = models.Dish.objects.update_or_create(defaults=validated_data, **lookup)
+
+        if tags:
+            dish.tags.set(tags)
+
+        return dish
+
+    def get_unique_together_validators(self) -> list:
+        """Override method to disable unique together checks."""
+        return []
