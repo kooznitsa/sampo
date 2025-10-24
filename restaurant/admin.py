@@ -10,6 +10,7 @@ from django.urls import reverse
 from django.utils.html import format_html
 from django.utils.safestring import SafeString
 
+import restaurant.filters as filters
 import restaurant.models as models
 import restaurant.tasks as tasks
 
@@ -43,18 +44,18 @@ class TagAdmin(admin.ModelAdmin):
 
 @admin.register(models.Restaurant)
 class RestaurantAdmin(admin.ModelAdmin):
-    list_display = ('id', 'name', 'category', 'address', 'ranking', 'menu_url', 'has_dishes')
-    search_fields = ('name', 'menu_url')
-    search_help_text = 'Поиск по полям «Название ресторана» и «Сайт меню»'
-    readonly_fields = ('menu_update_date',)
-    list_filter = ('category',)
-    date_hierarchy = 'updated_at'
-    list_select_related = ('category', 'city')
     actions = ('update_restaurant', 'update_menu')
     actions_on_bottom = True
+    date_hierarchy = 'updated_at'
     formfield_overrides = {
         django_models.CharField: {'widget': TextInput(attrs={'size': 80})},
     }
+    list_display = ('id', 'name', 'category', 'address', 'ranking', 'menu_url', 'has_dishes')
+    list_filter = ('category', filters.RestaurantRankingFilter)
+    list_select_related = ('category', 'city')
+    readonly_fields = ('menu_update_date',)
+    search_fields = ('name', 'menu_url')
+    search_help_text = 'Поиск по полям «Название ресторана» и «Сайт меню»'
 
     @admin.action(description='Обновить данные выбранных Ресторанов')
     def update_restaurant(self, request: WSGIRequest, queryset: QuerySet) -> None:
@@ -97,10 +98,11 @@ class RestaurantAdmin(admin.ModelAdmin):
 
 @admin.register(models.Dish)
 class DishAdmin(admin.ModelAdmin):
-    list_display = ('id', 'name', 'price', 'restaurant_link', 'weight', 'weight_unit', 'quantity')
-    search_fields = ('name',)
-    search_help_text = 'Поиск по полю «Название блюда»'
     autocomplete_fields = ('restaurant',)
+    list_display = ('id', 'name', 'price', 'restaurant_link', 'weight', 'weight_unit', 'quantity')
+    list_filter = (filters.DishPriceFilter,)
+    search_fields = ('name', 'restaurant__pk')
+    search_help_text = 'Поиск по полям «Название блюда» и «ID ресторана»'
 
     @admin.display(description='Ресторан')
     def restaurant_link(self, obj: models.Dish) -> Any | SafeString:
