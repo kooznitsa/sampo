@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Export to CSV actions in admin ([#19](https://github.com/kooznitsa/sampo/pull/19)).
+
 ### Fixed
 
 ### Changed
