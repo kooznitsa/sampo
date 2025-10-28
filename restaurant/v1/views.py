@@ -4,7 +4,7 @@ from django.db.models.query import QuerySet
 from django.shortcuts import get_object_or_404
 
 from drf_spectacular.types import OpenApiTypes
-from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter, OpenApiRequest, OpenApiResponse
+from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiRequest, OpenApiResponse
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.request import Request

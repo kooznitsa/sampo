@@ -30,7 +30,7 @@ class DishFilterSet(django_filters.FilterSet):
             raise NotFound(detail=f'Restaurant with id={value} was not found')
         return queryset.filter(restaurant_id=value)
 
-    def filter_available_only(self, queryset, name, value) -> QuerySet:
+    def filter_available_only(self, queryset: QuerySet, name: str, value: str | int | bool) -> QuerySet:
         if value in [1, '1', True, 'true']:
             return queryset.available()
         return queryset
