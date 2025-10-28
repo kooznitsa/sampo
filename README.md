@@ -56,8 +56,14 @@ poetry install --no-root
 ### Релиз
 
 ```bash
+git checkout dev
+git pull
+
 chmod +x release.sh
 ./release.sh v1.0.0  # изменить версию
+
+git checkout dev
+git merge main
 ```
 
 ## Структура базы данных (основные таблицы)

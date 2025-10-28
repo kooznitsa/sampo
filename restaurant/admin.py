@@ -1,3 +1,5 @@
+import csv
+from datetime import datetime
 from typing import Any
 
 from django.contrib import admin, messages
@@ -6,6 +8,7 @@ from django.db import models as django_models
 from django.db.models import Exists, OuterRef
 from django.db.models.query import QuerySet
 from django.forms import TextInput
+from django.http import HttpResponse
 from django.urls import reverse
 from django.utils.html import format_html
 from django.utils.safestring import SafeString
@@ -44,13 +47,13 @@ class TagAdmin(admin.ModelAdmin):
 
 @admin.register(models.Restaurant)
 class RestaurantAdmin(admin.ModelAdmin):
-    actions = ('update_restaurant', 'update_menu')
+    actions = ('update_restaurant', 'update_menu', 'export_csv')
     actions_on_bottom = True
     date_hierarchy = 'updated_at'
     formfield_overrides = {
         django_models.CharField: {'widget': TextInput(attrs={'size': 80})},
     }
-    list_display = ('id', 'name', 'category', 'address', 'ranking', 'menu_url', 'has_dishes')
+    list_display = ('id', 'name', 'category', 'address', 'ranking', 'menu_url', 'has_dishes', 'menu_update_date')
     list_filter = ('category', filters.RestaurantRankingFilter)
     list_select_related = ('category', 'city')
     readonly_fields = ('menu_update_date',)
@@ -83,6 +86,16 @@ class RestaurantAdmin(admin.ModelAdmin):
             messages.SUCCESS,
         )
 
+    @admin.action(description='Экспортировать в CSV')
+    def export_csv(self, request: WSGIRequest, queryset: QuerySet) -> HttpResponse:
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = f'attachment; filename=restaurants_{datetime.today()}.csv'
+        writer = csv.writer(response)
+        writer.writerow(['ID', 'Название', 'Категория', 'Город', 'Адрес', 'URL', 'Рейтинг', 'Дата обновления меню'])
+        for i in queryset.select_related('category', 'city'):
+            writer.writerow([i.id, i.name, i.category.name, i.city.name, i.address, i.menu_url, i.ranking, i.menu_update_date])
+        return response
+
     def get_queryset(self, request: WSGIRequest) -> QuerySet:
         queryset = super().get_queryset(request)
         if request.resolver_match.url_name == 'restaurant_restaurant_changelist':
@@ -98,11 +111,28 @@ class RestaurantAdmin(admin.ModelAdmin):
 
 @admin.register(models.Dish)
 class DishAdmin(admin.ModelAdmin):
+    actions = ('export_csv',)
+    actions_on_bottom = True
     autocomplete_fields = ('restaurant',)
     list_display = ('id', 'name', 'price', 'restaurant_link', 'weight', 'weight_unit', 'quantity')
     list_filter = (filters.DishPriceFilter,)
+    list_select_related = ('restaurant',)
     search_fields = ('name', 'restaurant__pk')
     search_help_text = 'Поиск по полям «Название блюда» и «ID ресторана»'
+
+    @admin.action(description='Экспортировать в CSV')
+    def export_csv(self, request: WSGIRequest, queryset: QuerySet) -> HttpResponse:
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = f'attachment; filename=dishes_{datetime.today()}.csv'
+        writer = csv.writer(response)
+        writer.writerow([
+            'ID', 'Название', 'Цена, ₽', 'Название ресторана', 'Адрес ресторана', 'Вес или объём',
+            'Единица измерения веса или объёма', 'Количество, шт.',
+        ])
+        for i in queryset.select_related('restaurant'):
+            writer.writerow(
+                [i.id, i.name, i.price.amount, i.restaurant.name, i.restaurant.address, i.weight, i.weight_unit, i.quantity])
+        return response
 
     @admin.display(description='Ресторан')
     def restaurant_link(self, obj: models.Dish) -> Any | SafeString:
