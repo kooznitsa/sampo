@@ -32,3 +32,5 @@ if 'test' in sys.argv:
             },
         },
     }
+
+TIME_ZONE = env.str('TZ')
