@@ -76,6 +76,8 @@ class Dish(DateTimeMixin):
     comment = models.TextField(verbose_name='Комментарий', null=True, blank=True)
     tags = models.ManyToManyField('Tag', verbose_name='Теги', related_name='dishes', blank=True)
 
+    objects = querysets.DishQuerySet.as_manager()
+
     class Meta:
         verbose_name = 'Блюдо'
         verbose_name_plural = 'Блюда'

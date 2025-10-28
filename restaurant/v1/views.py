@@ -4,7 +4,7 @@ from django.db.models.query import QuerySet
 from django.shortcuts import get_object_or_404
 
 from drf_spectacular.types import OpenApiTypes
-from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiRequest, OpenApiResponse
+from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter, OpenApiRequest, OpenApiResponse
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.request import Request
@@ -17,12 +17,12 @@ import restaurant.v1.serializers as serializers
 
 @extend_schema(tags=['restaurants'])
 @extend_schema_view(
-    list=extend_schema(description='List all restaurants'),
-    retrieve=extend_schema(description='Get restaurant by ID'),
-    create=extend_schema(description='Create restaurant'),
-    update=extend_schema(description='Update restaurant by ID'),
-    partial_update=extend_schema(description='Partially update restaurant by ID'),
-    destroy=extend_schema(description='Delete restaurant by ID'),
+    list=extend_schema(description='List all restaurants.'),
+    retrieve=extend_schema(description='Get restaurant by ID.'),
+    create=extend_schema(description='Create restaurant.'),
+    update=extend_schema(description='Update restaurant by ID.'),
+    partial_update=extend_schema(description='Partially update restaurant by ID.'),
+    destroy=extend_schema(description='Delete restaurant by ID.'),
     scrape_menu=extend_schema(
         description='Scrape restaurant menu',
         request=OpenApiRequest(OpenApiTypes.NONE),
@@ -65,15 +65,15 @@ class RestaurantViewSet(viewsets.ModelViewSet):
 
 @extend_schema(tags=['dishes'])
 @extend_schema_view(
-    list=extend_schema(description='List all dishes'),
-    retrieve=extend_schema(description='Get dish by ID'),
-    create=extend_schema(description='Create dish'),
-    update=extend_schema(description='Update dish by ID'),
-    partial_update=extend_schema(description='Partially update dish by ID'),
-    destroy=extend_schema(description='Delete dish by ID'),
+    list=extend_schema(description='List all dishes.'),
+    retrieve=extend_schema(description='Get dish by ID.'),
+    create=extend_schema(description='Create dish.'),
+    update=extend_schema(description='Update dish by ID.'),
+    partial_update=extend_schema(description='Partially update dish by ID.'),
+    destroy=extend_schema(description='Delete dish by ID.'),
 )
 class DishViewSet(viewsets.ModelViewSet):
     serializer_class = serializers.DishSerializer
     model = serializer_class.Meta.model
-    queryset = model.objects.select_related('restaurant')
+    queryset = model.objects.select_related('restaurant').order_by('pk')
     filterset_class = DishFilterSet
