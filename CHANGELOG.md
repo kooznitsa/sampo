@@ -9,6 +9,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Export to CSV actions in admin ([#19](https://github.com/kooznitsa/sampo/pull/19)).
+
+### Fixed
+
+### Changed
+
+### Removed
+
+## [1.1.0] - 2025-10-24
+
+### Added
+
 - Restaurant link scraper ([#10](https://github.com/kooznitsa/sampo/pull/10)).
 - Restaurant menu scraper ([#11](https://github.com/kooznitsa/sampo/pull/11)).
 - Commands to scrape restaurant data and menu ([#13](https://github.com/kooznitsa/sampo/pull/13)).
@@ -19,10 +31,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Database configuration in Docker Compose ([#15](https://github.com/kooznitsa/sampo/pull/15)).
-
-### Changed
-
-### Removed
 
 ## [1.0.0] - 2025-08-29
 
