@@ -13,7 +13,10 @@ error_logger = logging.getLogger('error_logger')
 class LinkCollector:
     base_url = 'https://yandex.ru/maps/2/saint-petersburg/category/'
     spb_coordinates = {'lat_min': 59.8, 'lat_max': 60.1, 'lon_min': 30.1, 'lon_max': 30.5}
-    categories = {'coffee_shop': 'Кофейня', 'restaurant': 'Ресторан', 'fast_food': 'Быстрое питание', 'pub': 'Бар'}
+    categories = {
+        'coffee_shop': 'Кофейня', 'restaurant': 'Ресторан', 'fast_food': 'Быстрое питание', 'pub': 'Бар',
+        'confectionary': 'Кондитерская',
+    }
     card_tag = 'div.search-business-snippet-view'
 
     def __init__(self, driver: webdriver.Remote, timeout: int) -> None:

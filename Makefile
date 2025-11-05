@@ -12,6 +12,7 @@ MIGRATION_NAME ?= ''
 MIGRATION_NUM ?= ''
 PACKAGE ?= ''
 RESTAURANT_URL ?= ''
+WITHOUT_COORDS_ONLY ?= 1
 
 
 # -------------- HELP --------------
@@ -20,27 +21,29 @@ RESTAURANT_URL ?= ''
 .PHONY: help
 help:
 	@echo "Please use \`make <target>' where <target> is one of"
-	@echo "  build                                           to build Docker containers"
-	@echo "  checkmigrations                                 to check migrations"
-	@echo "  collect_links                                   to collect restaurant links"
-	@echo "  coverage                                        to get test coverage report"
-	@echo "  createsuperuser                                 to create super user"
-	@echo "  dump                                            to create database dump"
-	@echo "  linter                                          to run linter"
-	@echo "  load                                            to load fixtures"
-	@echo "  migrations                                      to create migration file with a default name"
-	@echo "  migrate                                         to apply migrations"
-	@echo "  mypy                                            to check typing"
-	@echo "  namedmigrations MIGRATION_NAME=<name>           to create migration file with a specific name"
-	@echo "  poetryadd PACKAGE=<package>                     to add package"
-	@echo "  rollback APP=<app_name> MIGRATION_NUM=<number>  to reverse migrations"
-	@echo "  rollbacktozero APP=<app_name>                   to rollback to initial migration"
-	@echo "  scrape_menu                                     to scrape menu"
-	@echo "  scrape_restaurant RESTAURANT_URL=<url>          to scrape restaurant"
-	@echo "  startapp APP=<app_name>                         to create a Django app"
-	@echo "  stop                                            to stop Docker containers"
-	@echo "  testall                                         to run all tests"
-	@echo "  testapp APP=<app_name> TAG=<tag>                to run app tests with a tag"
+	@echo "  build                                             to build Docker containers"
+	@echo "  checkmigrations                                   to check migrations"
+	@echo "  collect_links                                     to collect restaurant links"
+	@echo "  coverage                                          to get test coverage report"
+	@echo "  createsuperuser                                   to create super user"
+	@echo "  dump                                              to create database dump"
+	@echo "  linter                                            to run linter"
+	@echo "  load                                              to load fixtures"
+	@echo "  migrations                                        to create migration file with a default name"
+	@echo "  migrate                                           to apply migrations"
+	@echo "  mypy                                              to check typing"
+	@echo "  namedmigrations MIGRATION_NAME=<name>             to create migration file with a specific name"
+	@echo "  poetryadd PACKAGE=<package>                       to add package"
+	@echo "  poetryremove PACKAGE=<package>                    to remove package"
+	@echo "  rollback APP=<app_name> MIGRATION_NUM=<number>    to reverse migrations"
+	@echo "  rollbacktozero APP=<app_name>                     to rollback to initial migration"
+	@echo "  scrape_menu                                       to scrape menu"
+	@echo "  scrape_restaurant RESTAURANT_URL=<url>            to scrape restaurant"
+	@echo "  startapp APP=<app_name>                           to create a Django app"
+	@echo "  stop                                              to stop Docker containers"
+	@echo "  testall                                           to run all tests"
+	@echo "  testapp APP=<app_name> TAG=<tag>                  to run app tests with a tag"
+	@echo "  update_all_restaurant_data WITHOUT_COORDS_ONLY=1  to update all restaurants' data"
 
 
 
@@ -78,6 +81,12 @@ entercontainer:
 poetryadd:
 	$(DOCKER_EXEC) poetry add $(PACKAGE)
 
+# Remove package
+# Example: make poetryremove PACKAGE=geopy
+.PHONY: poetryremove
+poetryremove:
+	$(DOCKER_EXEC) poetry remove $(PACKAGE)
+
 
 # -------------- DJANGO --------------
 
@@ -85,7 +94,7 @@ poetryadd:
 # Example: make startapp APP=restaurant
 .PHONY: startapp
 startapp:
-	$(MANAGE) startapp $(APP)
+	$(DOCKER_EXEC) $(MANAGE) startapp $(APP)
 
 # Creates superuser
 .PHONY: createsuperuser
@@ -149,7 +158,6 @@ load:
 linter:
 	$(DOCKER_EXEC) poetry run flake8 ./ --ignore="E121,E122,E126,E201,E226,E266,E402,E501,Q000" --exclude=".venv"
 
-
 # Check typing
 .PHONY: mypy
 mypy:
@@ -204,3 +212,9 @@ scrape_menu:
 .PHONY: scrape_restaurant
 scrape_restaurant:
 	$(DOCKER_EXEC) $(MANAGE) scrape_restaurant $(RESTAURANT_URL)
+
+# Update all restaurants' data
+# Example: make update_all_restaurant_data WITHOUT_COORDS_ONLY=1; make update_all_restaurant_data WITHOUT_COORDS_ONLY=0
+.PHONY: update_all_restaurant_data
+update_all_restaurant_data:
+	$(DOCKER_EXEC) $(MANAGE) update_all_restaurant_data $(WITHOUT_COORDS_ONLY)

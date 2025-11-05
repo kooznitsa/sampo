@@ -1,5 +1,3 @@
-from typing import Any
-
 from django.db.models.query import QuerySet
 from django.shortcuts import get_object_or_404
 
@@ -45,20 +43,20 @@ class RestaurantViewSet(viewsets.ModelViewSet):
         return self.queryset
 
     @action(detail=True, methods=['post'], url_path='scrape_menu')
-    def scrape_menu(self, request: Request, *args: Any, **kwargs: Any) -> Response:
-        restaurant = get_object_or_404(self.model, pk=kwargs['pk'])
+    def scrape_menu(self, request: Request, pk: int) -> Response:
+        restaurant = get_object_or_404(self.model, pk=pk)
         tasks.scrape_menu_task.delay(restaurant.id)
         return Response(
-            {'status': 'success', 'message': 'Menu scraping task added to queue'},
+            data={'status': 'success', 'message': 'Menu scraping task added to queue'},
             status=status.HTTP_202_ACCEPTED,
         )
 
     @action(detail=True, methods=['post'], url_path='scrape_restaurant')
-    def scrape_restaurant(self, request: Request, *args: Any, **kwargs: Any) -> Response:
-        restaurant = get_object_or_404(self.model, pk=kwargs['pk'])
+    def scrape_restaurant(self, request: Request, pk: int) -> Response:
+        restaurant = get_object_or_404(self.model, pk=pk)
         tasks.scrape_restaurant_task.delay(restaurant.id)
         return Response(
-            {'status': 'success', 'message': 'Restaurant scraping task added to queue'},
+            data={'status': 'success', 'message': 'Restaurant scraping task added to queue'},
             status=status.HTTP_202_ACCEPTED,
         )
 

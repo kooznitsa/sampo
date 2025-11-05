@@ -3,6 +3,7 @@ from decimal import Decimal
 import unittest
 from unittest.mock import MagicMock, patch
 
+from django.template.loader import render_to_string
 from django.test import tag, TestCase
 from django.utils import timezone
 
@@ -212,14 +213,20 @@ class TestParsers(TestCase):
 @tag('services', 'scrapers', 'restaurant_scraper')
 class TestRestaurantScraper(unittest.TestCase):
     restaurant_data = {
-        'name': 'Petrov-Vodkin',
+        'name': 'Nola Jazz Bar',
         'city': 'Санкт-Петербург',
-        'address': 'Адмиралтейский просп., 6',
-        'ranking': 4.9,
-        'menu_url': 'https://yandex.ru/maps/org/petrov_vodkin/69164245287/menu/',
+        'address': 'Волынский пер., 2, Санкт-Петербург',
+        'phone_number': '+7 (981) 916-79-33',
+        'ranking': 5.0,
+        'num_of_reviews': 894,
+        'latitude': 59.938352,
+        'longitude': 30.321111,
+        'menu_url': 'https://yandex.ru/maps/org/nola_jazz_bar/233512176817/menu/',
     }
     category = 'Ресторан'
     timeout = 5
+    template = 'yandex/restaurant_card.html'
+    template_list = 'yandex/restaurant_card_from_list.html'
 
     @patch('restaurant.services.restaurant_scraper.BeautifulSoup')
     @patch.object(services.RestaurantScraper, 'write_data_to_db')
@@ -235,7 +242,7 @@ class TestRestaurantScraper(unittest.TestCase):
 
         scraper.run()
 
-        mock_driver.get.assert_called_once_with('https://yandex.ru/maps/org/petrov_vodkin/69164245287/')
+        mock_driver.get.assert_called_once_with('https://yandex.ru/maps/org/nola_jazz_bar/233512176817/')
         mock_parse.assert_called_once()
         mock_write_db.assert_called_once_with(mock_parse.return_value)
 
@@ -267,41 +274,27 @@ class TestRestaurantScraper(unittest.TestCase):
         mp = mock_parser.return_value
         mp.get_name.return_value = self.restaurant_data['name']
         mp.get_address.return_value = self.restaurant_data['address']
+        mp.get_phone.return_value = self.restaurant_data['phone_number']
         mp.get_ranking.return_value = self.restaurant_data['ranking']
+        mp.get_num_of_reviews.return_value = self.restaurant_data['num_of_reviews']
+        mp.get_coordinates.return_value = self.restaurant_data['longitude'], self.restaurant_data['latitude']
         mp.get_link.return_value = self.restaurant_data['menu_url']
 
-        html = f"""
-            <div class="search-business-snippet-view">
-               <div class="search-business-snippet-view__content">
-                  <div class="search-business-snippet-view__head">
-                     <div class="search-business-snippet-view__title">
-                        {self.restaurant_data['name']}
-                     </div>
-                     <div class="search-business-snippet-view__optional"></div>
-                  </div>
-                  <div class="search-business-snippet-view__rating-and-awards">
-                     <a role="link" class="search-business-snippet-view__rating" href="{self.restaurant_data['menu_url']}" tabindex="-1">
-                        <div class="business-rating-with-text-view">
-                              <div class="business-rating-badge-view__rating"><span class="a11y-hidden">Рейтинг&nbsp;</span><span class="business-rating-badge-view__rating-text">{self.restaurant_data['ranking']}</span></div>
-                        </div>
-                     </a>
-                  </div>
-                  <div class="search-business-snippet-view__sequence">
-                     <div class="search-business-snippet-view__sequence-item _priority_low"><a role="link" class="search-business-snippet-view__address" href="/maps/2/saint-petersburg/house/Z0kYdQZhSEYDQFtjfXVyd3lmYw==/" tabindex="-1">{self.restaurant_data['address']}</a></div>
-                  </div>
-               </div>
-            </div>
-        """
-
         scraper = services.RestaurantScraper(driver=MagicMock(), timeout=self.timeout, url=str(self.restaurant_data['menu_url']))
-        soup = BeautifulSoup(html, 'html.parser')
-        result = scraper.parse_card(soup)
+        for template in (self.template, self.template_list):
+            with self.subTest(template=template):
+                html = render_to_string(self.template, context=self.restaurant_data)
+                soup = BeautifulSoup(html, 'html.parser')
+                result = scraper.parse_card(soup)
 
-        self.assertEqual(result, self.restaurant_data)
+                self.assertEqual(result, self.restaurant_data)
 
-        mp.get_name.assert_called_once_with(soup)
-        mp.get_address.assert_called_once_with(soup)
-        mp.get_ranking.assert_called_once_with(soup)
+                mp.get_name.assert_called_once_with(soup)
+                mp.get_address.assert_called_once_with(soup)
+                mp.get_phone.assert_called_once_with(soup)
+                mp.get_ranking.assert_called_once_with(soup)
+                mp.get_num_of_reviews.assert_called_once_with(soup)
+                mp.reset_mock()
 
     @patch('restaurant.services.restaurant_scraper.error_logger')
     @patch('restaurant.services.restaurant_scraper.info_logger')
@@ -393,7 +386,10 @@ class TestRestaurantScraper(unittest.TestCase):
         mp = mock_parser.return_value
         mp.get_name.return_value = self.restaurant_data['name']
         mp.get_address.return_value = self.restaurant_data['address']
+        mp.get_phone.return_value = self.restaurant_data['phone_number']
         mp.get_ranking.return_value = self.restaurant_data['ranking']
+        mp.get_num_of_reviews.return_value = self.restaurant_data['num_of_reviews']
+        mp.get_coordinates.return_value = self.restaurant_data['longitude'], self.restaurant_data['latitude']
         mp.get_link.return_value = self.restaurant_data['menu_url']
 
         scraper = services.RestaurantScraper(driver=MagicMock(), timeout=self.timeout, url=str(self.restaurant_data['menu_url']))
@@ -406,15 +402,17 @@ class TestRestaurantScraper(unittest.TestCase):
 @tag('services', 'scrapers', 'menu_scraper')
 class TestMenuScraper(unittest.TestCase):
     menu_data = {
-        'name': 'Сахалинский гребешок 1 шт.',
-        'price': 1500.0,
-        'weight': 200.0,
+        'name': 'Буйабес 1 шт.',
+        'price': 890.0,
+        'weight': 450.0,
         'weight_unit': 'г',
         'quantity': 1,
-        'comment': 'сорбет из маргеланской редьки, яблоко, миндальные сливки',
+        'comment': 'марсельская уха с треской, креветкой, мидиями и соусом Руй на крутонах',
     }
-    menu_url = 'https://yandex.ru/maps/org/petrov_vodkin/69164245287/menu/'
+    menu_url = 'https://yandex.ru/maps/org/nola_jazz_bar/233512176817/menu/'
     timeout = 5
+    template = 'yandex/dish_card.html'
+    template_list = 'yandex/restaurant_card_from_list.html'
 
     def setUp(self) -> None:
         super().setUp()
@@ -451,34 +449,8 @@ class TestMenuScraper(unittest.TestCase):
         mp.get_quantity.return_value = self.menu_data['quantity']
         mp.get_description.return_value = self.menu_data['comment']
 
-        html = f"""
-        <div class="business-full-items-grouped-view__item _view_grid">
-           <div class="business-full-items-grouped-view__photo-item">
-              <div role="presentation" class="related-product-view _size_normal">
-                 <div class="related-item-photo-view _size_normal _first" aria-hidden="false" role="button" tabindex="0">
-                    <div class="related-item-photo-view__image" style="height: 160px;">
-                       <div class="image" aria-hidden="true" role="button" tabindex="-1" style="height: 160px;">
-                          <div class="image__bg"><img alt="{self.menu_data['name']}, фото — Бельвью (Санкт-Петербург, набережная реки Мойки, 22)" width="100%" height="100%" class="image__img" src="https://avatars.mds.yandex.net/get-sprav-products/9240521/2a0000018a2238f9a60c703e2d91ed31339b/M_height"></div>
-                          <div class="image__content"></div>
-                       </div>
-                    </div>
-                    <div class="related-item-photo-view__info">
-                       <div class="related-item-photo-view__main">
-                          <div class="related-item-photo-view__title" title="{self.menu_data['name']}</div>
-                          <div class="related-item-photo-view__description" title="{self.menu_data['comment']}">{self.menu_data['comment']}</div>
-                       </div>
-                       <div class="related-product-view__additional">
-                          <span class="related-product-view__price">{self.menu_data['price']} ₽</span>
-                          <span class="related-product-view__volume">{self.menu_data['weight']} {self.menu_data['weight_unit']}</span>
-                       </div>
-                    </div>
-                 </div>
-              </div>
-           </div>
-        </div>
-        """
-
         scraper = services.MenuScraper(restaurant=self.restaurant, driver=MagicMock(), timeout=self.timeout)
+        html = render_to_string(self.template, context=self.menu_data)
         soup = BeautifulSoup(html, 'html.parser')
         result = scraper.parse_card(soup)
 
@@ -593,11 +565,15 @@ class TestMenuScraper(unittest.TestCase):
 @tag('services', 'scrapers', 'link_collector')
 class TestLinkCollector(unittest.TestCase):
     restaurant_data = {
-        'name': 'Petrov-Vodkin',
+        'name': 'Nola Jazz Bar',
         'city': 'Санкт-Петербург',
-        'address': 'Адмиралтейский просп., 6',
-        'ranking': 4.9,
-        'menu_url': 'https://yandex.ru/maps/org/petrov_vodkin/69164245287/menu/',
+        'address': 'Волынский пер., 2, Санкт-Петербург',
+        'phone_number': '+7 (981) 916-79-33',
+        'ranking': 5.0,
+        'num_of_reviews': 894,
+        'latitude': 59.938352,
+        'longitude': 30.321111,
+        'menu_url': 'https://yandex.ru/maps/org/nola_jazz_bar/233512176817/menu/',
     }
     timeout = 5
 

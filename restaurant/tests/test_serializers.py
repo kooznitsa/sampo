@@ -73,6 +73,18 @@ class RestaurantSerializerTestCase(TestCase):
         self.assertEqual(restaurant_double.id, restaurant.id)
         self.assertEqual(unique_restaurants.first().ranking, self.restaurant_ranking)
 
+    def test_restaurant_with_correct_coordinates(self) -> None:
+        data = factories.RestaurantFactory.as_payload(latitude=59.5107, longitude=30.1919)
+        serializer = serializers.RestaurantSerializer(data=data, partial=True)
+
+        self.assertTrue(serializer.is_valid(), serializer.errors)
+
+    def test_restaurant_with_wrong_coordinates_throws_error(self) -> None:
+        data = factories.RestaurantFactory.as_payload(latitude=30.1919, longitude=59.5107)
+        serializer = serializers.RestaurantSerializer(data=data, partial=True)
+
+        self.assertFalse(serializer.is_valid(), serializer.errors)
+
 
 @tag('dish', 'dish_serializer')
 class DishSerializerTestCase(TestCase):

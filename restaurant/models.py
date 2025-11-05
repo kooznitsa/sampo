@@ -18,17 +18,6 @@ class Category(models.Model):
         return self.name
 
 
-class City(models.Model):
-    name = models.CharField(verbose_name='Название города', max_length=100, unique=True)
-
-    class Meta:
-        verbose_name = 'Город'
-        verbose_name_plural = 'Города'
-
-    def __str__(self) -> str:
-        return self.name
-
-
 class Tag(models.Model):
     name = models.CharField(verbose_name='Название тега', max_length=100, unique=True)
 
@@ -43,14 +32,18 @@ class Tag(models.Model):
 class Restaurant(DateTimeMixin):
     name = models.CharField(verbose_name='Название ресторана', max_length=100)
     category = models.ForeignKey('Category', verbose_name='Категория', related_name='restaurants', on_delete=models.CASCADE, null=True, blank=True)
-    city = models.ForeignKey('City', verbose_name='Город', related_name='restaurants', on_delete=models.CASCADE)
+    city = models.ForeignKey('geodata.City', verbose_name='Город', related_name='restaurants', on_delete=models.CASCADE)
     address = models.CharField(verbose_name='Адрес', max_length=255)
-    phone_number = models.CharField(verbose_name='Номер телефона', max_length=10, null=True, blank=True)
+    phone_number = models.CharField(verbose_name='Номер телефона', null=True, blank=True)
     restaurant_url = models.URLField(verbose_name='Сайт ресторана', help_text='URL стороннего сайта', null=True, blank=True)
     menu_url = models.URLField(verbose_name='Сайт меню', help_text='URL Яндекса', unique=True, null=True, blank=True, default=None)
     ranking = models.FloatField(verbose_name='Рейтинг', default=0.0)
+    num_of_reviews = models.PositiveIntegerField(verbose_name='Количество оценок', default=0)
+    latitude = models.FloatField(verbose_name='Широта', null=True, blank=True)
+    longitude = models.FloatField(verbose_name='Долгота', null=True, blank=True)
     comment = models.TextField(verbose_name='Комментарий', null=True, blank=True)
     menu_update_date = models.DateField(verbose_name='Дата обновления меню', null=True, blank=True)
+    stations = models.ManyToManyField('geodata.Station', verbose_name='Станции метро', related_name='restaurants', blank=True)
 
     objects = querysets.RestaurantQuerySet.as_manager()
 
