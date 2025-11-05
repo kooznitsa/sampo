@@ -4,8 +4,9 @@ import re
 
 from django.utils import timezone
 
-from bs4 import BeautifulSoup
 from bs4.element import Tag
+from selenium import webdriver
+from selenium.webdriver.common.by import By
 
 from restaurant.enums import WeightEnum
 
@@ -19,24 +20,46 @@ class RestaurantParser:
         self.one_card_tag = 'div.business-card-view__main-wrapper'
         self.name_tag = 'div.search-business-snippet-view__title, h1.orgpage-header-view__header'
         self.address_tag = 'a.search-business-snippet-view__address, a.business-contacts-view__address-link'
+        self.phone_tag = 'div.orgpage-phones-view__phone-number'
         self.ranking_tag = 'span.business-rating-badge-view__rating-text'
+        self.num_of_reviews_tag = 'div.business-header-rating-view__text'
         self.link_tag = 'a[href*="/maps/org/"]'
+        self.coordinates_attr = 'data-coordinates'
 
-    def get_name(self, card: Tag) -> str | None:
-        el = card.select_one(self.name_tag)
+    def get_name(self, tag: Tag) -> str | None:
+        el = tag.select_one(self.name_tag)
         return el.get_text(strip=True) if el else None
 
-    def get_address(self, card: Tag) -> str | None:
-        el = card.select_one(self.address_tag)
+    def get_address(self, tag: Tag) -> str | None:
+        el = tag.select_one(self.address_tag)
         return el.get_text(strip=True) if el else None
 
-    def get_ranking(self, card: Tag) -> float:
-        el = card.select_one(self.ranking_tag)
+    def get_phone(self, tag: Tag) -> str | None:
+        el = tag.select_one(self.phone_tag)
+        return el.get_text(strip=True) if el else None
+
+    def get_ranking(self, tag: Tag) -> float:
+        el = tag.select_one(self.ranking_tag)
         return float(el.get_text(strip=True).replace(',', '.')) if el else 0.0
 
-    def get_link(self, card: Tag) -> str | None:
-        el = card.select_one(self.link_tag)
+    def get_num_of_reviews(self, tag: Tag) -> int:
+        el = tag.select_one(self.num_of_reviews_tag)
+        num = re.sub(r'\D', '', el.get_text(strip=True)) if el else 0
+        return int(num) if num else 0
+
+    def get_link(self, tag: Tag) -> str | None:
+        el = tag.select_one(self.link_tag)
         return UrlParser().parse_url(str(el['href'])) if el else None
+
+    def get_coordinates(self, driver: webdriver.Remote) -> tuple[float | None, float | None]:
+        coords_elem = driver.find_element(By.CSS_SELECTOR, f'div[{self.coordinates_attr}]')
+        if coord_str := coords_elem.get_attribute(self.coordinates_attr):
+            try:
+                longitude, latitude = coord_str.split(',')
+                return float(longitude), float(latitude)
+            except Exception:
+                return None, None
+        return None, None
 
 
 class MenuParser:
@@ -49,39 +72,39 @@ class MenuParser:
         self.dish_description = 'div.related-item-photo-view__description, span.related-item-list-view__description'
         self.updated_at = 'div.business-full-items-grouped-view__info'
 
-    def get_name(self, soup: BeautifulSoup) -> str | None:
-        if el := soup.select_one(self.dish_name):
+    def get_name(self, tag: Tag) -> str | None:
+        if el := tag.select_one(self.dish_name):
             return el.get_text(strip=True)
         return None
 
-    def get_price(self, soup: BeautifulSoup) -> dict | None:
-        if el := soup.select_one(self.dish_price):
+    def get_price(self, tag: Tag) -> dict | None:
+        if el := tag.select_one(self.dish_price):
             text = el.get_text(strip=True)
             return PriceParser().parse_price(text)
         return None
 
-    def get_weight(self, soup: BeautifulSoup) -> dict | None:
+    def get_weight(self, tag: Tag) -> dict | None:
         result = None
-        if el := soup.select_one(self.dish_volume):
+        if el := tag.select_one(self.dish_volume):
             text = el.get_text(strip=True)
             result = DishAmountParser().parse_weight(text)
             if not result:
-                name = self.get_name(soup)
+                name = self.get_name(tag)
                 result = DishAmountParser().parse_weight(name) if name else None
         return result
 
-    def get_quantity(self, soup: BeautifulSoup) -> int | None:
+    def get_quantity(self, tag: Tag) -> int | None:
         result = None
-        if el := soup.select_one(self.dish_volume):
+        if el := tag.select_one(self.dish_volume):
             text = el.get_text(strip=True)
             result = DishAmountParser().parse_quantity(text)
             if not result:
-                name = self.get_name(soup)
+                name = self.get_name(tag)
                 result = DishAmountParser().parse_quantity(name) if name else None
         return result
 
-    def get_description(self, soup: BeautifulSoup) -> str | None:
-        if el := soup.select_one(self.dish_description):
+    def get_description(self, tag: Tag) -> str | None:
+        if el := tag.select_one(self.dish_description):
             return el.get_text(strip=True)
         return None
 

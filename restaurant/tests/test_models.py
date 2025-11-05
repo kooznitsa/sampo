@@ -4,6 +4,7 @@ import logging
 from django.test import tag, TestCase
 from django.utils import timezone
 
+import geodata.models as geodata_models
 import restaurant.models as models
 import restaurant.tests.factories as factories
 
@@ -31,7 +32,7 @@ class RestaurantModelTestCase(TestCase):
     def test_get_restaurant(self) -> None:
         restaurant = models.Restaurant.objects.first()
         category = models.Category.objects.first()
-        city = models.City.objects.first()
+        city = geodata_models.City.objects.first()
 
         self.assertEqual(restaurant.category, category)
         self.assertEqual(restaurant.city, city)

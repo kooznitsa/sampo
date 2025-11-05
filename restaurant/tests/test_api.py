@@ -5,6 +5,7 @@ from django.test import tag, TestCase
 from rest_framework import status
 from rest_framework.test import APIClient
 
+import geodata.models as geodata_models
 import restaurant.models as models
 import restaurant.tests.factories as factories
 from restaurant.tests.factories import DEFAULT_PASSWORD
@@ -51,7 +52,7 @@ class RestaurantApiTestCase(AuthenticatedAPITestCase):
     def test_get_restaurant_detail(self) -> None:
         restaurant = models.Restaurant.objects.first()
         category = models.Category.objects.first()
-        city = models.City.objects.first()
+        city = geodata_models.City.objects.first()
         response = self.client.get(f'{BASE_URL}{self.uri}{restaurant.pk}/')
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -81,7 +82,7 @@ class RestaurantApiTestCase(AuthenticatedAPITestCase):
 
     def test_create_not_unique_restaurant(self) -> None:
         category = models.Category.objects.first()
-        city = models.City.objects.first()
+        city = geodata_models.City.objects.first()
         factories.RestaurantFactory.create(category=category, city=city, menu_url=self.menu_url)
         response = self.client.post(f'{BASE_URL}{self.uri}', self.payload)
 

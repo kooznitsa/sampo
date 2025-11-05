@@ -22,7 +22,7 @@ class CityFactory(factory.django.DjangoModelFactory):
     name = factory.Faker('word')
 
     class Meta:
-        model = 'restaurant.City'
+        model = 'geodata.City'
         django_get_or_create = ('name',)
 
 
@@ -39,10 +39,13 @@ class RestaurantFactory(factory.django.DjangoModelFactory):
     category = factory.SubFactory(CategoryFactory)
     city = factory.SubFactory(CityFactory)
     address = factory.Faker('address')
-    phone_number = factory.Faker('numerify', text='##########')
+    phone_number = factory.Faker('numerify', text='##############')
     restaurant_url = factory.Faker('url')
     menu_url = factory.Faker('url')
     ranking = fuzzy.FuzzyFloat(0.0, 5.0, precision=1)
+    num_of_reviews = fuzzy.FuzzyInteger(0, 1000)
+    latitude = fuzzy.FuzzyFloat(59.0, 60.0, precision=6)
+    longitude = fuzzy.FuzzyFloat(30.0, 32.0, precision=6)
     comment = factory.Faker('text')
 
     class Meta:
@@ -61,6 +64,9 @@ class RestaurantFactory(factory.django.DjangoModelFactory):
             'restaurant_url': obj.restaurant_url,
             'menu_url': obj.menu_url,
             'ranking': obj.ranking,
+            'num_of_reviews': obj.num_of_reviews,
+            'latitude': obj.latitude,
+            'longitude': obj.longitude,
             'comment': obj.comment,
         }
 

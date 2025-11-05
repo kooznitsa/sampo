@@ -45,8 +45,9 @@ EXTERNAL_APPS = (
 )
 
 CUSTOM_APPS = (
-    'restaurant',
     'authentication',
+    'geodata',
+    'restaurant',
 )
 
 INSTALLED_APPS = DJANGO_APPS + EXTERNAL_APPS + CUSTOM_APPS

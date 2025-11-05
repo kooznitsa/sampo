@@ -23,7 +23,6 @@ class Command(BaseCommand):
     def handle(self, *args: Any, **options: Any) -> None:
         driver_manager = DriverManager()
         driver = driver_manager.init()
-        info_logger.info('Driver initialized.')
 
         url = options['url']
 
