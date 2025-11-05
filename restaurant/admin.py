@@ -61,6 +61,7 @@ class RestaurantForm(ModelForm):
 class RestaurantAdmin(admin.ModelAdmin):
     actions = ('update_restaurant', 'update_menu', 'export_csv')
     actions_on_bottom = True
+    change_list_template = 'change_list.html'
     date_hierarchy = 'updated_at'
     form = RestaurantForm
     list_display = ('id', 'name', 'category', 'address', 'ranking', 'menu_url', 'has_dishes', 'has_coords', 'menu_update_date')
