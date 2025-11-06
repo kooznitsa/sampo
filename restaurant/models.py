@@ -2,9 +2,11 @@ from django.db import models
 
 from djmoney.models.fields import MoneyField
 
+import geodata.models as geodata_models
+from geodata.utils import get_haversine_distance
 from restaurant.enums import WeightEnum
-import restaurant.querysets as querysets
 from restaurant.mixins import DateTimeMixin
+import restaurant.querysets as querysets
 
 
 class Category(models.Model):
@@ -43,7 +45,6 @@ class Restaurant(DateTimeMixin):
     longitude = models.FloatField(verbose_name='Долгота', null=True, blank=True)
     comment = models.TextField(verbose_name='Комментарий', null=True, blank=True)
     menu_update_date = models.DateField(verbose_name='Дата обновления меню', null=True, blank=True)
-    stations = models.ManyToManyField('geodata.Station', verbose_name='Станции метро', related_name='restaurants', blank=True)
 
     objects = querysets.RestaurantQuerySet.as_manager()
 
@@ -53,6 +54,18 @@ class Restaurant(DateTimeMixin):
 
     def __str__(self) -> str:
         return self.name
+
+    @property
+    def nearest_stations(self) -> list[tuple['geodata_models.Station', float]] | None:
+        if self.latitude and self.longitude:
+            stations = geodata_models.Station.objects.all()
+            num_of_stations = 5
+            stations_with_distances = [
+                (i, get_haversine_distance(self.latitude, self.longitude, i.latitude, i.longitude))
+                for i in stations
+            ]
+            return sorted(stations_with_distances, key=lambda x: x[1])[:num_of_stations]
+        return None
 
 
 class Dish(DateTimeMixin):

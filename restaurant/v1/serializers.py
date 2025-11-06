@@ -38,12 +38,13 @@ class RestaurantSerializer(serializers.ModelSerializer):
     category = SlugRelatedFieldWithCreate(slug_field='name', queryset=models.Category.objects.all(), required=False)
     city = SlugRelatedFieldWithCreate(slug_field='name', queryset=geodata_models.City.objects.all())
     ranking = serializers.FloatField(min_value=0, max_value=5)
+    nearest_stations = serializers.SerializerMethodField(source='get_nearest_stations')
 
     class Meta:
         model = models.Restaurant
         fields = (
             'id', 'name', 'category', 'city', 'address', 'phone_number', 'restaurant_url', 'menu_url', 'ranking',
-            'num_of_reviews', 'longitude', 'latitude', 'comment',
+            'num_of_reviews', 'longitude', 'latitude', 'comment', 'nearest_stations',
         )
         extra_kwargs: dict = {
             'menu_url': {
@@ -75,6 +76,17 @@ class RestaurantSerializer(serializers.ModelSerializer):
             setattr(instance, attr, value)
         instance.save()
         return instance
+
+    def get_nearest_stations(self, instance: models.Restaurant) -> list[dict] | None:
+        if stations := instance.nearest_stations:
+            return [
+                {
+                    'name': station.name,
+                    'line': station.line,
+                    'distance': distance,
+                } for station, distance in stations
+            ]
+        return None
 
 
 class RestaurantShortSerializer(serializers.ModelSerializer):
