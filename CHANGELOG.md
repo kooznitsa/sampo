@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Dish availability filter in dish list endpoint ([#20](https://github.com/kooznitsa/sampo/pull/20)).
 - Restaurant coordinates ([#21](https://github.com/kooznitsa/sampo/pull/21)).
 - Command to update all restaurants' data ([#21](https://github.com/kooznitsa/sampo/pull/21)).
+- Restaurant nearest stations ([#22](https://github.com/kooznitsa/sampo/pull/22)).
 
 ### Fixed
 

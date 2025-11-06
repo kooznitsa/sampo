@@ -9,8 +9,8 @@ from django.db.models.query import QuerySet
 from django.forms import ModelForm, TextInput
 from django.http import HttpResponse
 from django.urls import reverse
-from django.utils.html import format_html
-from django.utils.safestring import SafeString
+from django.utils.html import format_html, format_html_join
+from django.utils.safestring import mark_safe, SafeString
 
 import restaurant.filters as filters
 import restaurant.models as models
@@ -67,7 +67,7 @@ class RestaurantAdmin(admin.ModelAdmin):
     list_display = ('id', 'name', 'category', 'address', 'ranking', 'menu_url', 'has_dishes', 'has_coords', 'menu_update_date')
     list_filter = ('category', filters.RestaurantRankingFilter)
     list_select_related = ('category', 'city')
-    readonly_fields = ('menu_update_date',)
+    readonly_fields = ('menu_update_date', 'nearest_stations')
     search_fields = ('name', 'menu_url')
     search_help_text = 'Поиск по полям «Название ресторана» и «Сайт меню»'
 
@@ -127,6 +127,17 @@ class RestaurantAdmin(admin.ModelAdmin):
     @admin.display(description='Есть координаты', ordering='has_coords', boolean=True)
     def has_coords(self, obj: models.Restaurant) -> bool:
         return getattr(obj, 'has_coords', False)
+
+    @admin.display(description='Ближайшие станции')
+    def nearest_stations(self, obj: models.Restaurant) -> Any | SafeString:
+        nearest_stations = obj.nearest_stations
+        if not nearest_stations:
+            return mark_safe('<span>Координаты ресторана не найдены.</span>')
+        return format_html_join(
+            sep=mark_safe('<br>'),
+            format_string='<li>{} ({}) — {} км</li>',
+            args_generator=((r.name, r.line, '{0:.1f}'.format(d)) for r, d in nearest_stations)
+        )
 
 
 @admin.register(models.Dish)
