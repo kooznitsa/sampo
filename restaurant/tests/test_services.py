@@ -227,6 +227,7 @@ class TestRestaurantScraper(unittest.TestCase):
     timeout = 5
     template = 'yandex/restaurant_card.html'
     template_list = 'yandex/restaurant_card_from_list.html'
+    template_something_wrong = 'yandex/something_wrong.html'
 
     @patch('restaurant.services.restaurant_scraper.BeautifulSoup')
     @patch.object(services.RestaurantScraper, 'write_data_to_db')
@@ -235,6 +236,7 @@ class TestRestaurantScraper(unittest.TestCase):
         mock_driver = MagicMock()
         mock_card = MagicMock()
         mock_card.get_attribute.return_value = '<div>OK</div>'
+        mock_driver.find_elements.return_value = None
         mock_driver.find_element.return_value = mock_card
 
         scraper = services.RestaurantScraper(driver=mock_driver, timeout=self.timeout, url=str(self.restaurant_data['menu_url']))
@@ -251,13 +253,14 @@ class TestRestaurantScraper(unittest.TestCase):
         mock_driver = MagicMock()
         mock_card = MagicMock()
         mock_card.get_attribute.return_value = None
+        mock_driver.find_elements.return_value = None
         mock_driver.find_element.return_value = mock_card
 
         scraper = services.RestaurantScraper(driver=mock_driver, timeout=self.timeout, url=str(self.restaurant_data['menu_url']))
         scraper.run()
 
         mock_logger.error.assert_any_call(
-            f'Failed to scrape restaurant data ({self.restaurant_data["menu_url"]}): No outerHTML attribute'
+            f'Failed to scrape restaurant data ({self.restaurant_data["menu_url"]}): No outerHTML attribute.'
         )
 
     @patch('restaurant.services.restaurant_scraper.WebDriverWait')
@@ -372,6 +375,7 @@ class TestRestaurantScraper(unittest.TestCase):
     @patch('restaurant.services.restaurant_scraper.error_logger')
     def test_run_logs_exception_on_selenium_error(self, mock_logger: MagicMock) -> None:
         mock_driver = MagicMock()
+        mock_driver.find_elements.return_value = None
         mock_driver.find_element.side_effect = Exception('Element not found')
 
         scraper = services.RestaurantScraper(driver=mock_driver, timeout=self.timeout, url=str(self.restaurant_data['menu_url']))
@@ -397,6 +401,30 @@ class TestRestaurantScraper(unittest.TestCase):
         scraper.parse_card(soup)
 
         mock_logger.info.assert_called_once()
+
+    @patch('restaurant.services.restaurant_scraper.BeautifulSoup')
+    @patch.object(services.RestaurantScraper, 'write_data_to_db')
+    @patch.object(services.RestaurantScraper, 'parse_card')
+    def test_parse_something_wrong_page(self, mock_parse: MagicMock, mock_write_db: MagicMock, mock_soup: MagicMock) -> None:
+        category = factories.CategoryFactory.create()
+        city = factories.CityFactory.create()
+        factories.RestaurantFactory.create(category=category, city=city, menu_url=self.restaurant_data['menu_url'])
+
+        mock_driver = MagicMock()
+        mock_card = MagicMock()
+        mock_card.get_attribute.return_value = render_to_string(self.template_something_wrong)
+        mock_driver.find_elements.return_value = '<div>Something wrong</div>'
+        mock_driver.find_element.return_value = mock_card
+
+        scraper = services.RestaurantScraper(driver=mock_driver, timeout=self.timeout, url=str(self.restaurant_data['menu_url']))
+        scraper.run()
+
+        mock_driver.get.assert_called_once_with('https://yandex.ru/maps/org/nola_jazz_bar/233512176817/')
+        mock_parse.assert_not_called()
+        mock_write_db.assert_not_called()
+
+        updated_restaurant = models.Restaurant.objects.filter(menu_url=self.restaurant_data['menu_url']).first()
+        self.assertEqual(updated_restaurant.is_active, False)
 
 
 @tag('services', 'scrapers', 'menu_scraper')

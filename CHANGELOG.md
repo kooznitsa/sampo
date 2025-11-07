@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Restaurant coordinates ([#21](https://github.com/kooznitsa/sampo/pull/21)).
 - Command to update all restaurants' data ([#21](https://github.com/kooznitsa/sampo/pull/21)).
 - Restaurant nearest stations ([#22](https://github.com/kooznitsa/sampo/pull/22)).
+- Restaurants not active if something is wrong page ([#23](https://github.com/kooznitsa/sampo/pull/23)).
 
 ### Fixed
 

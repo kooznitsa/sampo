@@ -24,6 +24,7 @@ class RestaurantParser:
         self.ranking_tag = 'span.business-rating-badge-view__rating-text'
         self.num_of_reviews_tag = 'div.business-header-rating-view__text'
         self.link_tag = 'a[href*="/maps/org/"]'
+        self.something_wrong_tag = 'div.something-wrong-view'
         self.coordinates_attr = 'data-coordinates'
 
     def get_name(self, tag: Tag) -> str | None:

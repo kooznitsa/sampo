@@ -1,10 +1,10 @@
 include ./env/.env.local
 
-DOCKER_COMPOSE := docker compose -f ./deploy/compose.yml --env-file ./env/.env.$(ENV) --profile
+DOCKER_COMPOSE := docker compose -p $(APP_NAME) -f ./deploy/compose.yml --env-file ./env/.env.$(ENV) --profile
 DOCKER_EXEC := docker exec $(APP_NAME)_backend
-DOCKER_PROFILE ?= main
 MANAGE = poetry run python manage.py
 
+DOCKER_PROFILE ?= main
 LOCALE ?= 'ru'
 TAG ?= 'list'
 APP ?= restaurant
@@ -35,6 +35,7 @@ help:
 	@echo "  namedmigrations MIGRATION_NAME=<name>             to create migration file with a specific name"
 	@echo "  poetryadd PACKAGE=<package>                       to add package"
 	@echo "  poetryremove PACKAGE=<package>                    to remove package"
+	@echo "  prune                                             to remove stopped containers, associated volumes, cache, etc."
 	@echo "  rollback APP=<app_name> MIGRATION_NUM=<number>    to reverse migrations"
 	@echo "  rollbacktozero APP=<app_name>                     to rollback to initial migration"
 	@echo "  scrape_menu                                       to scrape menu"
@@ -43,26 +44,20 @@ help:
 	@echo "  stop                                              to stop Docker containers"
 	@echo "  testall                                           to run all tests"
 	@echo "  testapp APP=<app_name> TAG=<tag>                  to run app tests with a tag"
+	@echo "  testmigrate                                       to run migrations for test database"
 	@echo "  update_all_restaurant_data WITHOUT_COORDS_ONLY=1  to update all restaurants' data"
-
-
-
-# -------------- SETUP --------------
-
-# For `poetry add` command
-# Set up virtual environment and activate it:
-# python3.12 -m venv .venv
-# source .venv/bin/activate
 
 
 # -------------- DOCKER --------------
 
 # Build containers
+# Example: make build DOCKER_PROFILE=main
 .PHONY: build
 build:
 	$(DOCKER_COMPOSE) $(DOCKER_PROFILE) up -d --build
 
 # Stop containers
+# Example: make stop DOCKER_PROFILE=main
 .PHONY: stop
 stop:
 	$(DOCKER_COMPOSE) $(DOCKER_PROFILE) down
@@ -71,6 +66,15 @@ stop:
 .PHONY: entercontainer
 entercontainer:
 	docker exec -it $(APP_NAME)_backend sh
+
+# Remove:
+#  - all stopped containers
+#  - all networks not used by at least one container
+#  - all images without at least one container associated to them
+#  - all build cache
+.PHONY: prune
+prune:
+	docker system prune -a
 
 
 # -------------- PACKAGES --------------
@@ -175,8 +179,7 @@ mypyapp-ci:
 # Run migrations for test database
 .PHONY: testmigrate
 testmigrate:
-	export DJANGO_SETTINGS_MODULE=core.settings.test;
-	$(DOCKER_EXEC) $(MANAGE) migrate
+	$(DOCKER_EXEC) $(MANAGE) migrate --settings=core.settings.test
 
 # Run all tests
 .PHONY: testall
