@@ -45,6 +45,26 @@ services:
       - ../scripts/create_databases.sql:/docker-entrypoint-initdb.d/create_databases.sql
     profiles: [main, secondary, test]
 
+  test_postgres:
+    <<: *app-main
+    image: postgres:16
+    shm_size: '1gb'
+    hostname: test_postgres
+    container_name: ${APP_NAME}_test_postgres
+    restart: on-failure
+    environment:
+      POSTGRES_DB: ${POSTGRES_TEST_DB}
+      POSTGRES_USER: ${POSTGRES_TEST_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_TEST_PASSWORD}
+      POSTGRES_PORT: 5432
+      POSTGRES_HOST: test_postgres
+    ports:
+      - '${POSTGRES_TEST_EXTERNAL_PORT}:5432'
+    volumes:
+      - test-postgres:/var/lib/postgresql/data
+      - ../scripts/create_databases.sql:/docker-entrypoint-initdb.d/create_databases.sql
+    profiles: [main, secondary, test]
+
   nginx:
     <<: *app-main
     image: nginx:1.25
@@ -132,6 +152,7 @@ services:
 volumes:
   static-volume:
   db-postgres:
+  test-postgres:
   redis:
 
 networks:

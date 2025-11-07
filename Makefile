@@ -44,6 +44,7 @@ help:
 	@echo "  stop                                              to stop Docker containers"
 	@echo "  testall                                           to run all tests"
 	@echo "  testapp APP=<app_name> TAG=<tag>                  to run app tests with a tag"
+	@echo "  testmigrate                                       to run migrations for test database"
 	@echo "  update_all_restaurant_data WITHOUT_COORDS_ONLY=1  to update all restaurants' data"
 
 
@@ -175,16 +176,21 @@ mypyapp-ci:
 
 # -------------- TEST --------------
 
+# Run migrations for test database
+.PHONY: testmigrate
+testmigrate:
+	$(DOCKER_EXEC) $(MANAGE) migrate --settings=core.settings.test
+
 # Run all tests
 .PHONY: testall
 testall:
-	$(DOCKER_EXEC) $(MANAGE) test
+	$(DOCKER_EXEC) $(MANAGE) test --settings=core.settings.test
 
 # Run app tests with a tag
 # Example: make testapp APP=restaurant TAG=detail
 .PHONY: testapp
 testapp:
-	$(DOCKER_EXEC) $(MANAGE) test $(APP).tests --tag=$(TAG)
+	$(DOCKER_EXEC) $(MANAGE) test $(APP).tests --tag=$(TAG) --settings=core.settings.test
 
 # Get coverage report
 .PHONY: coverage
