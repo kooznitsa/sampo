@@ -6,8 +6,11 @@ from django.db.models.query import QuerySet
 
 class RestaurantQuerySet(django_models.QuerySet):
 
+    def active(self) -> QuerySet:
+        return self.filter(is_active=True)
+
     def with_dishes(self) -> QuerySet:
-        return self.filter(dishes__isnull=False).distinct()
+        return self.active().filter(dishes__isnull=False).distinct()
 
 
 class DishQuerySet(django_models.QuerySet):

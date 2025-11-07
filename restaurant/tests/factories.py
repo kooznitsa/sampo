@@ -47,6 +47,7 @@ class RestaurantFactory(factory.django.DjangoModelFactory):
     latitude = fuzzy.FuzzyFloat(59.0, 60.0, precision=6)
     longitude = fuzzy.FuzzyFloat(30.0, 32.0, precision=6)
     comment = factory.Faker('text')
+    is_active = True
 
     class Meta:
         model = 'restaurant.Restaurant'
@@ -68,6 +69,7 @@ class RestaurantFactory(factory.django.DjangoModelFactory):
             'latitude': obj.latitude,
             'longitude': obj.longitude,
             'comment': obj.comment,
+            'is_active': obj.is_active,
         }
 
 

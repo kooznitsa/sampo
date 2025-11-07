@@ -25,6 +25,9 @@ DATABASES = {
         'OPTIONS': {
             'sslmode': env.str('DATABASE_SSLMODE', default='disable'),
         },
+        'TEST': {
+            'NAME': f"test_{env.str('POSTGRES_DB')}",
+        },
     }
 }
 

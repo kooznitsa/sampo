@@ -8,6 +8,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
+import restaurant.models as models
 from restaurant.services.parsers import RestaurantParser
 from restaurant.v1.serializers import RestaurantSerializer
 
@@ -28,25 +29,29 @@ class RestaurantScraper:
             self.driver.get(re.sub(r'/menu/?$', '/', self.url))
             self.wait()
             try:
-                card = self.driver.find_element(By.CSS_SELECTOR, self.parser.one_card_tag)
-                if outer_html := card.get_attribute('outerHTML'):
-                    soup = BeautifulSoup(outer_html, 'html.parser')
-                    data = self.parse_card(soup) if soup else None
-                    if data:
-                        self.write_data_to_db(data)
-                    else:
-                        error_logger.error(f'Failed to scrape restaurant data ({self.url}): No data found')
+                if self.driver.find_elements(By.CSS_SELECTOR, self.parser.something_wrong_tag):
+                    error_logger.error(f'Failed to scrape restaurant data ({self.url}): URL not found.')
+                    models.Restaurant.objects.filter(menu_url=self.url).update(is_active=False)
                 else:
-                    error_logger.error(f'Failed to scrape restaurant data ({self.url}): No outerHTML attribute')
+                    card = self.driver.find_element(By.CSS_SELECTOR, self.parser.one_card_tag)
+                    if outer_html := card.get_attribute('outerHTML'):
+                        soup = BeautifulSoup(outer_html, 'html.parser')
+                        data = self.parse_card(soup) if soup else None
+                        if data:
+                            self.write_data_to_db(data)
+                        else:
+                            error_logger.error(f'Failed to scrape restaurant data ({self.url}): No data found.')
+                    else:
+                        error_logger.error(f'Failed to scrape restaurant data ({self.url}): No outerHTML attribute.')
             except Exception as e:
-                error_logger.error(f'Failed to scrape restaurant data ({self.url}): {e}')
+                error_logger.error(f'Failed to scrape restaurant data ({self.url}): {e}.')
 
     def wait(self) -> None:
         wait = WebDriverWait(self.driver, self.timeout)
         try:
             wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, self.parser.one_card_tag)))
         except Exception as e:
-            error_logger.error(f'Error finding restaurant elements: {e}', exc_info=True)
+            error_logger.error(f'Error finding restaurant elements: {e}.', exc_info=True)
 
     def parse_card(self, tag: Tag) -> dict:
         name = self.parser.get_name(tag)

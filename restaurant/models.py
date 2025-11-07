@@ -45,6 +45,7 @@ class Restaurant(DateTimeMixin):
     longitude = models.FloatField(verbose_name='Долгота', null=True, blank=True)
     comment = models.TextField(verbose_name='Комментарий', null=True, blank=True)
     menu_update_date = models.DateField(verbose_name='Дата обновления меню', null=True, blank=True)
+    is_active = models.BooleanField(verbose_name='Действующий ресторан', help_text='Ресторан считается действующим при рабочем URL', default=True)
 
     objects = querysets.RestaurantQuerySet.as_manager()
 
