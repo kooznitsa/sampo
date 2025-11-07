@@ -9,18 +9,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+### Fixed
+
+### Changed
+
+### Removed
+
+## [1.1.1] - 2025-11-07
+
+### Added
+
 - Export to CSV actions in admin ([#19](https://github.com/kooznitsa/sampo/pull/19)).
 - Dish availability filter in dish list endpoint ([#20](https://github.com/kooznitsa/sampo/pull/20)).
 - Restaurant coordinates ([#21](https://github.com/kooznitsa/sampo/pull/21)).
 - Command to update all restaurants' data ([#21](https://github.com/kooznitsa/sampo/pull/21)).
 - Restaurant nearest stations ([#22](https://github.com/kooznitsa/sampo/pull/22)).
 - Restaurants not active if something is wrong page ([#23](https://github.com/kooznitsa/sampo/pull/23)).
-
-### Fixed
-
-### Changed
-
-### Removed
 
 ## [1.1.0] - 2025-10-24
 
