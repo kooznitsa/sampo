@@ -1,7 +1,5 @@
 # Sampo: проект по поиску ресторанов и еды в Санкт-Петербурге
 
-![Static Badge](https://img.shields.io/badge/development-ongoing-red)
-
 Сампо — в карельском народном эпосе волшебная мельница, обладающая магической силой и являющаяся источником счастья, благополучия и изобилия.
 
 ## Требования
@@ -56,8 +54,14 @@ poetry install --no-root
 ### Релиз
 
 ```bash
+git checkout dev
+git pull
+
 chmod +x release.sh
 ./release.sh v1.0.0  # изменить версию
+
+git checkout dev
+git merge main
 ```
 
 ## Структура базы данных (основные таблицы)

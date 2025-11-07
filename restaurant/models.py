@@ -2,9 +2,11 @@ from django.db import models
 
 from djmoney.models.fields import MoneyField
 
+import geodata.models as geodata_models
+from geodata.utils import get_haversine_distance
 from restaurant.enums import WeightEnum
-import restaurant.querysets as querysets
 from restaurant.mixins import DateTimeMixin
+import restaurant.querysets as querysets
 
 
 class Category(models.Model):
@@ -13,17 +15,6 @@ class Category(models.Model):
     class Meta:
         verbose_name = 'Категория'
         verbose_name_plural = 'Категории'
-
-    def __str__(self) -> str:
-        return self.name
-
-
-class City(models.Model):
-    name = models.CharField(verbose_name='Название города', max_length=100, unique=True)
-
-    class Meta:
-        verbose_name = 'Город'
-        verbose_name_plural = 'Города'
 
     def __str__(self) -> str:
         return self.name
@@ -43,14 +34,18 @@ class Tag(models.Model):
 class Restaurant(DateTimeMixin):
     name = models.CharField(verbose_name='Название ресторана', max_length=100)
     category = models.ForeignKey('Category', verbose_name='Категория', related_name='restaurants', on_delete=models.CASCADE, null=True, blank=True)
-    city = models.ForeignKey('City', verbose_name='Город', related_name='restaurants', on_delete=models.CASCADE)
+    city = models.ForeignKey('geodata.City', verbose_name='Город', related_name='restaurants', on_delete=models.CASCADE)
     address = models.CharField(verbose_name='Адрес', max_length=255)
-    phone_number = models.CharField(verbose_name='Номер телефона', max_length=10, null=True, blank=True)
+    phone_number = models.CharField(verbose_name='Номер телефона', null=True, blank=True)
     restaurant_url = models.URLField(verbose_name='Сайт ресторана', help_text='URL стороннего сайта', null=True, blank=True)
     menu_url = models.URLField(verbose_name='Сайт меню', help_text='URL Яндекса', unique=True, null=True, blank=True, default=None)
     ranking = models.FloatField(verbose_name='Рейтинг', default=0.0)
+    num_of_reviews = models.PositiveIntegerField(verbose_name='Количество оценок', default=0)
+    latitude = models.FloatField(verbose_name='Широта', null=True, blank=True)
+    longitude = models.FloatField(verbose_name='Долгота', null=True, blank=True)
     comment = models.TextField(verbose_name='Комментарий', null=True, blank=True)
     menu_update_date = models.DateField(verbose_name='Дата обновления меню', null=True, blank=True)
+    is_active = models.BooleanField(verbose_name='Действующий ресторан', help_text='Ресторан считается действующим при рабочем URL', default=True)
 
     objects = querysets.RestaurantQuerySet.as_manager()
 
@@ -60,6 +55,18 @@ class Restaurant(DateTimeMixin):
 
     def __str__(self) -> str:
         return self.name
+
+    @property
+    def nearest_stations(self) -> list[tuple['geodata_models.Station', float]] | None:
+        if self.latitude and self.longitude:
+            stations = geodata_models.Station.objects.all()
+            num_of_stations = 5
+            stations_with_distances = [
+                (i, get_haversine_distance(self.latitude, self.longitude, i.latitude, i.longitude))
+                for i in stations
+            ]
+            return sorted(stations_with_distances, key=lambda x: x[1])[:num_of_stations]
+        return None
 
 
 class Dish(DateTimeMixin):
@@ -75,6 +82,8 @@ class Dish(DateTimeMixin):
     quantity = models.PositiveIntegerField(verbose_name='Количество в штуках', null=True, blank=True)
     comment = models.TextField(verbose_name='Комментарий', null=True, blank=True)
     tags = models.ManyToManyField('Tag', verbose_name='Теги', related_name='dishes', blank=True)
+
+    objects = querysets.DishQuerySet.as_manager()
 
     class Meta:
         verbose_name = 'Блюдо'

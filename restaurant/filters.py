@@ -14,16 +14,26 @@ if TYPE_CHECKING:
 
 
 class DishFilterSet(django_filters.FilterSet):
-    restaurant = django_filters.NumberFilter(method='filter_by_restaurant')
+    restaurant = django_filters.NumberFilter(method='filter_by_restaurant', label='Restaurant ID.')
+    available_only = django_filters.NumberFilter(
+        method='filter_available_only',
+        label='Available only',
+        help_text='0 = all dishes, 1 = only available.',
+    )
 
     class Meta:
         model = models.Dish
-        fields = ['restaurant']
+        fields = ['restaurant', 'available_only']
 
-    def filter_by_restaurant(self, queryset: QuerySet, name: str, value: int) -> models.Dish | NoReturn:
+    def filter_by_restaurant(self, queryset: QuerySet, name: str, value: int) -> QuerySet | NoReturn:
         if not models.Restaurant.objects.filter(pk=value).exists():
             raise NotFound(detail=f'Restaurant with id={value} was not found')
         return queryset.filter(restaurant_id=value)
+
+    def filter_available_only(self, queryset: QuerySet, name: str, value: str | int | bool) -> QuerySet:
+        if value in [1, '1', True, 'true']:
+            return queryset.available()
+        return queryset
 
 
 class DishPriceFilter(SimpleListFilter):

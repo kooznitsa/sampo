@@ -1,5 +1,10 @@
+import logging
+
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
+
+info_logger = logging.getLogger('info_logger')
+error_logger = logging.getLogger('error_logger')
 
 
 class DriverManager:
@@ -21,7 +26,10 @@ class DriverManager:
             options=options,
         )
 
+        info_logger.info('Driver initialized.')
+
         return self.driver
 
     def quit(self) -> None:
         self.driver.quit()
+        info_logger.info('All scraping completed successfully.')

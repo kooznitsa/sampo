@@ -1,4 +1,5 @@
 from decimal import Decimal
+import logging
 from typing import Any
 
 from django.db import transaction
@@ -7,7 +8,10 @@ from djmoney.money import Money
 from rest_framework import serializers
 from rest_framework.relations import SlugRelatedField
 
+import geodata.models as geodata_models
 import restaurant.models as models
+
+info_logger = logging.getLogger('info_logger')
 
 
 class MoneyField(serializers.Field):
@@ -32,20 +36,31 @@ class SlugRelatedFieldWithCreate(SlugRelatedField):
 
 class RestaurantSerializer(serializers.ModelSerializer):
     category = SlugRelatedFieldWithCreate(slug_field='name', queryset=models.Category.objects.all(), required=False)
-    city = SlugRelatedFieldWithCreate(slug_field='name', queryset=models.City.objects.all())
+    city = SlugRelatedFieldWithCreate(slug_field='name', queryset=geodata_models.City.objects.all())
     ranking = serializers.FloatField(min_value=0, max_value=5)
+    nearest_stations = serializers.SerializerMethodField(source='get_nearest_stations')
 
     class Meta:
         model = models.Restaurant
         fields = (
             'id', 'name', 'category', 'city', 'address', 'phone_number', 'restaurant_url', 'menu_url', 'ranking',
-            'comment',
+            'num_of_reviews', 'longitude', 'latitude', 'comment', 'nearest_stations',
         )
         extra_kwargs: dict = {
             'menu_url': {
                 'validators': [],
             }
         }
+
+    def validate_longitude(self, value: float | None) -> float | None:
+        if value and not (28 <= value <= 32):
+            raise serializers.ValidationError('Longitude must be in range 28-32')
+        return value
+
+    def validate_latitude(self, value: float | None) -> float | None:
+        if value and not (58 <= value <= 62):
+            raise serializers.ValidationError('Latitude must be in range 58-62')
+        return value
 
     @transaction.atomic
     def create(self, validated_data: dict) -> models.Restaurant:
@@ -61,6 +76,17 @@ class RestaurantSerializer(serializers.ModelSerializer):
             setattr(instance, attr, value)
         instance.save()
         return instance
+
+    def get_nearest_stations(self, instance: models.Restaurant) -> list[dict] | None:
+        if stations := instance.nearest_stations:
+            return [
+                {
+                    'name': station.name,
+                    'line': station.line,
+                    'distance': distance,
+                } for station, distance in stations
+            ]
+        return None
 
 
 class RestaurantShortSerializer(serializers.ModelSerializer):

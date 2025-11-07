@@ -1,13 +1,17 @@
+from datetime import timedelta
 import logging
 
-from django.test import TestCase
+from django.test import tag, TestCase
+from django.utils import timezone
 
+import geodata.models as geodata_models
 import restaurant.models as models
 import restaurant.tests.factories as factories
 
 logger = logging.getLogger('info_logger')
 
 
+@tag('category', 'models', 'category_model')
 class CategoryModelTestCase(TestCase):
     def setUp(self) -> None:
         factories.CategoryFactory.create()
@@ -18,6 +22,7 @@ class CategoryModelTestCase(TestCase):
         self.assertIsNotNone(category)
 
 
+@tag('restaurant', 'models', 'restaurant_model')
 class RestaurantModelTestCase(TestCase):
     def setUp(self) -> None:
         category = factories.CategoryFactory.create()
@@ -27,12 +32,13 @@ class RestaurantModelTestCase(TestCase):
     def test_get_restaurant(self) -> None:
         restaurant = models.Restaurant.objects.first()
         category = models.Category.objects.first()
-        city = models.City.objects.first()
+        city = geodata_models.City.objects.first()
 
         self.assertEqual(restaurant.category, category)
         self.assertEqual(restaurant.city, city)
 
 
+@tag('dish', 'models', 'dish_model')
 class DishModelTestCase(TestCase):
     def setUp(self) -> None:
         restaurant = factories.RestaurantFactory.create()
@@ -52,3 +58,25 @@ class DishModelTestCase(TestCase):
 
         self.assertEqual(tags.count(), dish.tags.count())
         self.assertEqual(set(tags), set(dish.tags.all()))
+
+    def test_get_available_dish(self) -> None:
+        dish = models.Dish.objects.first()
+        dish.updated_at = timezone.now()
+        dish.save()
+        restaurant = models.Restaurant.objects.first()
+        restaurant.menu_update_date = timezone.now().date() - timedelta(days=1)
+        restaurant.save()
+
+        available_dish = models.Dish.objects.available().filter(pk=dish.pk)
+        self.assertTrue(available_dish.exists())
+
+    def test_get_unavailable_dish(self) -> None:
+        dish = models.Dish.objects.first()
+        dish.updated_at = timezone.now()
+        dish.save()
+        restaurant = models.Restaurant.objects.first()
+        restaurant.menu_update_date = timezone.now().date() + timedelta(days=1)
+        restaurant.save()
+
+        available_dish = models.Dish.objects.available().filter(pk=dish.pk)
+        self.assertFalse(available_dish.exists())

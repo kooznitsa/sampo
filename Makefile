@@ -1,10 +1,10 @@
 include ./env/.env.local
 
-DOCKER_COMPOSE := docker compose -f ./deploy/compose.yml --env-file ./env/.env.$(ENV) --profile
+DOCKER_COMPOSE := docker compose -p $(APP_NAME) -f ./deploy/compose.yml --env-file ./env/.env.$(ENV) --profile
 DOCKER_EXEC := docker exec $(APP_NAME)_backend
-DOCKER_PROFILE ?= main
 MANAGE = poetry run python manage.py
 
+DOCKER_PROFILE ?= main
 LOCALE ?= 'ru'
 TAG ?= 'list'
 APP ?= restaurant
@@ -12,6 +12,7 @@ MIGRATION_NAME ?= ''
 MIGRATION_NUM ?= ''
 PACKAGE ?= ''
 RESTAURANT_URL ?= ''
+WITHOUT_COORDS_ONLY ?= 1
 
 
 # -------------- HELP --------------
@@ -20,46 +21,43 @@ RESTAURANT_URL ?= ''
 .PHONY: help
 help:
 	@echo "Please use \`make <target>' where <target> is one of"
-	@echo "  build                                           to build Docker containers"
-	@echo "  checkmigrations                                 to check migrations"
-	@echo "  collect_links                                   to collect restaurant links"
-	@echo "  coverage                                        to get test coverage report"
-	@echo "  createsuperuser                                 to create super user"
-	@echo "  dump                                            to create database dump"
-	@echo "  linter                                          to run linter"
-	@echo "  load                                            to load fixtures"
-	@echo "  migrations                                      to create migration file with a default name"
-	@echo "  migrate                                         to apply migrations"
-	@echo "  mypy                                            to check typing"
-	@echo "  namedmigrations MIGRATION_NAME=<name>           to create migration file with a specific name"
-	@echo "  poetryadd PACKAGE=<package>                     to add package"
-	@echo "  rollback APP=<app_name> MIGRATION_NUM=<number>  to reverse migrations"
-	@echo "  rollbacktozero APP=<app_name>                   to rollback to initial migration"
-	@echo "  scrape_menu                                     to scrape menu"
-	@echo "  scrape_restaurant RESTAURANT_URL=<url>          to scrape restaurant"
-	@echo "  startapp APP=<app_name>                         to create a Django app"
-	@echo "  stop                                            to stop Docker containers"
-	@echo "  testall                                         to run all tests"
-	@echo "  testapp APP=<app_name> TAG=<tag>                to run app tests with a tag"
-
-
-
-# -------------- SETUP --------------
-
-# For `poetry add` command
-# Set up virtual environment and activate it:
-# python3.12 -m venv .venv
-# source .venv/bin/activate
+	@echo "  build                                             to build Docker containers"
+	@echo "  checkmigrations                                   to check migrations"
+	@echo "  collect_links                                     to collect restaurant links"
+	@echo "  coverage                                          to get test coverage report"
+	@echo "  createsuperuser                                   to create super user"
+	@echo "  dump                                              to create database dump"
+	@echo "  linter                                            to run linter"
+	@echo "  load                                              to load fixtures"
+	@echo "  migrations                                        to create migration file with a default name"
+	@echo "  migrate                                           to apply migrations"
+	@echo "  mypy                                              to check typing"
+	@echo "  namedmigrations MIGRATION_NAME=<name>             to create migration file with a specific name"
+	@echo "  poetryadd PACKAGE=<package>                       to add package"
+	@echo "  poetryremove PACKAGE=<package>                    to remove package"
+	@echo "  prune                                             to remove stopped containers, associated volumes, cache, etc."
+	@echo "  rollback APP=<app_name> MIGRATION_NUM=<number>    to reverse migrations"
+	@echo "  rollbacktozero APP=<app_name>                     to rollback to initial migration"
+	@echo "  scrape_menu                                       to scrape menu"
+	@echo "  scrape_restaurant RESTAURANT_URL=<url>            to scrape restaurant"
+	@echo "  startapp APP=<app_name>                           to create a Django app"
+	@echo "  stop                                              to stop Docker containers"
+	@echo "  testall                                           to run all tests"
+	@echo "  testapp APP=<app_name> TAG=<tag>                  to run app tests with a tag"
+	@echo "  testmigrate                                       to run migrations for test database"
+	@echo "  update_all_restaurant_data WITHOUT_COORDS_ONLY=1  to update all restaurants' data"
 
 
 # -------------- DOCKER --------------
 
 # Build containers
+# Example: make build DOCKER_PROFILE=main
 .PHONY: build
 build:
 	$(DOCKER_COMPOSE) $(DOCKER_PROFILE) up -d --build
 
 # Stop containers
+# Example: make stop DOCKER_PROFILE=main
 .PHONY: stop
 stop:
 	$(DOCKER_COMPOSE) $(DOCKER_PROFILE) down
@@ -68,6 +66,15 @@ stop:
 .PHONY: entercontainer
 entercontainer:
 	docker exec -it $(APP_NAME)_backend sh
+
+# Remove:
+#  - all stopped containers
+#  - all networks not used by at least one container
+#  - all images without at least one container associated to them
+#  - all build cache
+.PHONY: prune
+prune:
+	docker system prune -a
 
 
 # -------------- PACKAGES --------------
@@ -78,6 +85,12 @@ entercontainer:
 poetryadd:
 	$(DOCKER_EXEC) poetry add $(PACKAGE)
 
+# Remove package
+# Example: make poetryremove PACKAGE=geopy
+.PHONY: poetryremove
+poetryremove:
+	$(DOCKER_EXEC) poetry remove $(PACKAGE)
+
 
 # -------------- DJANGO --------------
 
@@ -85,7 +98,7 @@ poetryadd:
 # Example: make startapp APP=restaurant
 .PHONY: startapp
 startapp:
-	$(MANAGE) startapp $(APP)
+	$(DOCKER_EXEC) $(MANAGE) startapp $(APP)
 
 # Creates superuser
 .PHONY: createsuperuser
@@ -149,7 +162,6 @@ load:
 linter:
 	$(DOCKER_EXEC) poetry run flake8 ./ --ignore="E121,E122,E126,E201,E226,E266,E402,E501,Q000" --exclude=".venv"
 
-
 # Check typing
 .PHONY: mypy
 mypy:
@@ -167,8 +179,7 @@ mypyapp-ci:
 # Run migrations for test database
 .PHONY: testmigrate
 testmigrate:
-	export DJANGO_SETTINGS_MODULE=core.settings.test;
-	$(DOCKER_EXEC) $(MANAGE) migrate
+	$(DOCKER_EXEC) $(MANAGE) migrate --settings=core.settings.test
 
 # Run all tests
 .PHONY: testall
@@ -204,3 +215,9 @@ scrape_menu:
 .PHONY: scrape_restaurant
 scrape_restaurant:
 	$(DOCKER_EXEC) $(MANAGE) scrape_restaurant $(RESTAURANT_URL)
+
+# Update all restaurants' data
+# Example: make update_all_restaurant_data WITHOUT_COORDS_ONLY=1; make update_all_restaurant_data WITHOUT_COORDS_ONLY=0
+.PHONY: update_all_restaurant_data
+update_all_restaurant_data:
+	$(DOCKER_EXEC) $(MANAGE) update_all_restaurant_data $(WITHOUT_COORDS_ONLY)
