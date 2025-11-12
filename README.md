@@ -40,9 +40,12 @@ cd sampo
 cp env/.env.local.example env/.env.local
 cp env/.env.test.example env/.env.test
 make build
+
+make migrate
+make elastic
 ```
 
-### Установка зависимостей локально
+### Установка зависимостей локально (если необходимо)
 
 ```bash
 python3.12 -m venv .venv

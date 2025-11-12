@@ -42,6 +42,7 @@ EXTERNAL_APPS = (
     'drf_standardized_errors',
     'django_filters',
     'rest_framework_simplejwt',
+    'django_elasticsearch_dsl',
 )
 
 CUSTOM_APPS = (
@@ -278,3 +279,13 @@ SPECTACULAR_SETTINGS = {
 
 CELERY_BROKER_URL = 'redis://redis:6379/0'
 CELERY_RESULT_BACKEND = 'redis://redis:6379/0'
+
+
+# ELASTICSEARCH
+
+ELASTICSEARCH_DSL = {
+    'default': {
+        'hosts': ['http://sampo_elasticsearch:9200'],
+        'verify_certs': False,
+    },
+}

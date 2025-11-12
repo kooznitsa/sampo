@@ -8,7 +8,10 @@ from django.test import tag, TestCase
 from django.utils import timezone
 
 from bs4 import BeautifulSoup
+from elasticsearch_dsl import connections
 
+from restaurant.documents import DishDocument
+from restaurant.elastic import DishElasticQueryManager
 from restaurant.enums import WeightEnum
 from restaurant.exceptions import MenuNotFoundException
 import restaurant.models as models
@@ -628,3 +631,50 @@ class TestLinkCollector(unittest.TestCase):
         mock_driver.get.assert_called_once()
         mock_parse.assert_called_once_with(mock_card)
         mock_write_db.assert_called_once_with(mock_parse.return_value, 'Ресторан')
+
+
+@tag('services', 'elasticsearch', 'elasticsearch_dish')
+class TestElasticsearchDish(TestCase):
+    dish_names = (
+        'котлета по-киевски', 'котлеты по-киевски', 'КОТЛЕТА ПО КИЕВСКИ', 'киевская котлета',
+        'котлета из Киева', 'пожарская котлета', 'котлета с сыром',
+    )
+    search_text = 'котлета по-киевски'
+
+    def setUp(self) -> None:
+        category = factories.CategoryFactory.create()
+        city = factories.CityFactory.create()
+        factories.RestaurantFactory.create(category=category, city=city)
+
+    def test_search_by_name_returns_all_dishes(self) -> None:
+        for name in self.dish_names:
+            factories.DishFactory.create(restaurant=models.Restaurant.objects.first(), name=name)
+
+        query = DishElasticQueryManager.query_match_by_name(self.search_text)
+        queryset = DishElasticQueryManager().perform_search(query, self.search_text)
+
+        self.assertEqual(queryset.count(), len(self.dish_names))
+
+    def test_search_by_multiple_fields_returns_exact_matches(self) -> None:
+        restaurant = models.Restaurant.objects.first()
+        tag_name, comment, *names = self.dish_names
+        tag_obj = factories.TagFactory.create(name=tag_name)
+        dish = factories.DishFactory.create(restaurant=restaurant)
+        dish.tags.add(tag_obj)
+        factories.DishFactory.create(restaurant=restaurant, comment=comment)
+        for name in names:
+            factories.DishFactory.create(restaurant=restaurant, name=name)
+
+        query = DishElasticQueryManager.query_multi_match(self.search_text)
+        queryset = DishElasticQueryManager().perform_search(query, self.search_text)
+
+        self.assertEqual(queryset.count(), 4)
+
+    def test_document_indexing(self) -> None:
+        dish = factories.DishFactory.create(restaurant=models.Restaurant.objects.first(), name=self.search_text)
+        DishDocument().update(dish)
+
+        es = connections.get_connection()
+        result = es.get(index=DishDocument._index._name, id=dish.pk)
+
+        self.assertEqual(result['_source']['name'], self.search_text)
