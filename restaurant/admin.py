@@ -152,11 +152,16 @@ class DishAdmin(admin.ModelAdmin):
     search_help_text = 'Поиск по полям «Название блюда» и «ID ресторана»'
 
     def get_search_results(self, request: HttpRequest, queryset: QuerySet, search_term: str) -> tuple[QuerySet, bool]:
-        if search_term and not search_term.isnumeric():
-            query = DishElasticQueryManager.query_multi_match(search_term)
-            queryset = DishElasticQueryManager().perform_search(query, search_term)
+        if not search_term:
             return queryset, False
-        return super().get_search_results(request, queryset, search_term)
+
+        if search_term.isnumeric():
+            queryset = queryset.filter(restaurant__pk=search_term)
+            return queryset, False
+
+        query = DishElasticQueryManager.query_multi_match(search_term)
+        queryset = DishElasticQueryManager().perform_search(query, search_term)
+        return queryset, False
 
     @admin.display(description='Ресторан')
     def restaurant_link(self, obj: models.Dish) -> Any | SafeString:
