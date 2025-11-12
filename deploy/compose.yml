@@ -65,6 +65,27 @@ services:
       - ../scripts/create_databases.sql:/docker-entrypoint-initdb.d/create_databases.sql
     profiles: [main, secondary, test]
 
+  elasticsearch:
+    <<: *app-main
+    image: elasticsearch:8.16.3
+    container_name: ${APP_NAME}_elasticsearch
+    restart: always
+    environment:
+      - bootstrap.memory_lock=true
+      - 'ES_JAVA_OPTS=-Xms512m -Xmx512m'
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    ports:
+      - '9200:9200'
+      - '9300:9300'
+    volumes:
+      - elasticsearch-data:/usr/share/elasticsearch
+    profiles: [main]
+
   nginx:
     <<: *app-main
     image: nginx:1.25
@@ -154,6 +175,7 @@ volumes:
   db-postgres:
   test-postgres:
   redis:
+  elasticsearch-data:
 
 networks:
   sampo-net:

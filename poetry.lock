@@ -498,6 +498,25 @@ asgiref = ">=3.6"
 django = ">=4.2"
 
 [[package]]
+name = "django-elasticsearch-dsl"
+version = "8.0"
+description = "Wrapper around elasticsearch-dsl-py for django models"
+optional = false
+python-versions = ">=3.8"
+groups = ["main"]
+files = [
+    {file = "django-elasticsearch-dsl-8.0.tar.gz", hash = "sha256:64ee0612ced6d57515a6b7f29f1a3e1c2eea1996a6226fc72079a95c067b27ca"},
+    {file = "django_elasticsearch_dsl-8.0-py2.py3-none-any.whl", hash = "sha256:423784a4af336d109c3763622f1edc4973664cb5154beb55b3ff9390c1e4525e"},
+]
+
+[package.dependencies]
+elasticsearch-dsl = ">=8.9.0,<9.0.0"
+six = "*"
+
+[package.extras]
+celery = ["celery (>=4.1.0)"]
+
+[[package]]
 name = "django-environ"
 version = "0.12.0"
 description = "A package that allows you to utilize 12factor inspired environment variables to configure your Django application."
@@ -641,6 +660,70 @@ doc = ["myst-parser", "sphinx (!=5.2.0.post0)", "sphinx-autobuild", "sphinx-rtd-
 openapi = ["drf-spectacular (>=0.27.1)", "inflection"]
 release = ["flit", "keyring", "tbump"]
 test = ["tox", "tox-gh-actions"]
+
+[[package]]
+name = "elastic-transport"
+version = "8.17.1"
+description = "Transport classes and utilities shared among Python Elastic client libraries"
+optional = false
+python-versions = ">=3.8"
+groups = ["main"]
+files = [
+    {file = "elastic_transport-8.17.1-py3-none-any.whl", hash = "sha256:192718f498f1d10c5e9aa8b9cf32aed405e469a7f0e9d6a8923431dbb2c59fb8"},
+    {file = "elastic_transport-8.17.1.tar.gz", hash = "sha256:5edef32ac864dca8e2f0a613ef63491ee8d6b8cfb52881fa7313ba9290cac6d2"},
+]
+
+[package.dependencies]
+certifi = "*"
+urllib3 = ">=1.26.2,<3"
+
+[package.extras]
+develop = ["aiohttp", "furo", "httpx", "opentelemetry-api", "opentelemetry-sdk", "orjson", "pytest", "pytest-asyncio", "pytest-cov", "pytest-httpserver", "pytest-mock", "requests", "respx", "sphinx (>2)", "sphinx-autodoc-typehints", "trustme"]
+
+[[package]]
+name = "elasticsearch"
+version = "8.19.2"
+description = "Python client for Elasticsearch"
+optional = false
+python-versions = ">=3.8"
+groups = ["main"]
+files = [
+    {file = "elasticsearch-8.19.2-py3-none-any.whl", hash = "sha256:c16ba20c4c76cf6952e836dae7f4e724e00ba7bf31b94b79472b873683accdd4"},
+    {file = "elasticsearch-8.19.2.tar.gz", hash = "sha256:622efa6a3e662db45285f16ab57bf198ea73ac9e137e7ed8b1d1d1e47638959d"},
+]
+
+[package.dependencies]
+elastic-transport = ">=8.15.1,<9"
+python-dateutil = "*"
+typing-extensions = "*"
+
+[package.extras]
+async = ["aiohttp (>=3,<4)"]
+dev = ["aiohttp", "black", "build", "coverage", "isort", "jinja2", "mapbox-vector-tile", "mypy", "nox", "numpy", "orjson", "pandas", "pyarrow ; python_version < \"3.14\"", "pyright", "pytest", "pytest-asyncio", "pytest-cov", "pytest-mock", "python-dateutil", "pyyaml (>=5.4)", "requests (>=2,<3)", "simsimd", "tqdm", "twine", "types-python-dateutil", "types-tqdm", "unasync"]
+docs = ["sphinx", "sphinx-autodoc-typehints", "sphinx-rtd-theme (>=2.0)"]
+orjson = ["orjson (>=3)"]
+pyarrow = ["pyarrow (>=1)"]
+requests = ["requests (>=2.4.0,!=2.32.2,<3.0.0)"]
+vectorstore-mmr = ["numpy (>=1)", "simsimd (>=3)"]
+
+[[package]]
+name = "elasticsearch-dsl"
+version = "8.9.0"
+description = "Python client for Elasticsearch"
+optional = false
+python-versions = ">=3.7"
+groups = ["main"]
+files = [
+    {file = "elasticsearch-dsl-8.9.0.tar.gz", hash = "sha256:66410adf881f02b8a032e8a5b2a3ee093fdeede4b814fbf04c0f6ce0499b7472"},
+    {file = "elasticsearch_dsl-8.9.0-py3-none-any.whl", hash = "sha256:ab266bcf84b0f23bd2d73d9b31e054b5d38b20279cf076c53873f46b6dabf747"},
+]
+
+[package.dependencies]
+elasticsearch = ">=8.0.0,<9.0.0"
+python-dateutil = "*"
+
+[package.extras]
+develop = ["coverage", "pytest", "pytest-cov", "pytest-mock", "pytz", "sphinx (>2)", "sphinx-rtd-theme (>0.5)"]
 
 [[package]]
 name = "exceptiongroup"
@@ -1862,4 +1945,4 @@ h11 = ">=0.9.0,<1"
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.10,<4"
-content-hash = "c6d5584dd33cfe87db27655bc333efc59ec87d5c30c985880eedb2b0ec2e333c"
+content-hash = "4947c4b9041c6f21a3569ddd1c2f730c99f0c9b229bf5877e70f1dbc26d1aaf2"
