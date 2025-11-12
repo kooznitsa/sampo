@@ -27,6 +27,7 @@ help:
 	@echo "  coverage                                          to get test coverage report"
 	@echo "  createsuperuser                                   to create super user"
 	@echo "  dump                                              to create database dump"
+	@echo "  elastic                                           to create and populate the Elasticsearch index and mapping"
 	@echo "  entercontainer                                    to enter backend container"
 	@echo "  linter                                            to run linter"
 	@echo "  load                                              to load fixtures"

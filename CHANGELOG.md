@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Full-text search for dishes by name and by multiple fields ([#24](https://github.com/kooznitsa/sampo/pull/24)).
+
 ### Fixed
 
 ### Changed

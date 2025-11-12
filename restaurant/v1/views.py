@@ -7,10 +7,11 @@ from drf_spectacular.utils import (
 )
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
+from rest_framework.exceptions import ValidationError
 from rest_framework.request import Request
 from rest_framework.response import Response
 
-from restaurant.elastic import ElasticsearchQueryManager
+from restaurant.elastic import DishElasticQueryManager
 from restaurant.filters import DishFilterSet
 import restaurant.tasks as tasks
 import restaurant.v1.serializers as serializers
@@ -71,7 +72,16 @@ class RestaurantViewSet(viewsets.ModelViewSet):
         parameters=[
             OpenApiParameter(
                 name='name',
-                description='Filter dishes by name (word or phrase).',
+                description='Filter dishes by name (word or phrase) — with similar results.',
+                type=OpenApiTypes.STR,
+                examples=[
+                    OpenApiExample('Example 1', value='суп'),
+                    OpenApiExample('Example 2', value='котлета по-киевски'),
+                ],
+            ),
+            OpenApiParameter(
+                name='text',
+                description='Filter dishes by text using name, comment and tags.name fields — exact match.',
                 type=OpenApiTypes.STR,
                 examples=[
                     OpenApiExample('Example 1', value='суп'),
@@ -95,8 +105,17 @@ class DishViewSet(viewsets.ModelViewSet):
     def get_queryset(self) -> QuerySet:
         queryset = super().get_queryset()
 
-        if word := self.request.query_params.get('name'):
-            query = ElasticsearchQueryManager.query_dishes_containing_word(word)
-            queryset = ElasticsearchQueryManager().perform_search(query, word)
+        params = self.request.query_params
+        name = params.get('name')
+        text = params.get('text')
+
+        if name and text:
+            raise ValidationError({'detail': 'Please specify either the "name" or "text" parameter, but not both.'})
+        if name:
+            query = DishElasticQueryManager.query_match_by_name(name)
+            queryset = DishElasticQueryManager().perform_search(query, name)
+        if text:
+            query = DishElasticQueryManager.query_multi_match(text)
+            queryset = DishElasticQueryManager().perform_search(query, text)
 
         return queryset
