@@ -13,18 +13,18 @@ from rest_framework.response import Response
 
 from restaurant.elastic import DishElasticQueryManager
 from restaurant.filters import DishFilterSet, RestaurantFilterSet
+import restaurant.models as models
 import restaurant.tasks as tasks
 import restaurant.v1.serializers as serializers
 
 
 @extend_schema(tags=['restaurants'])
 @extend_schema_view(
-    list=extend_schema(description='List all restaurants.'),
-    retrieve=extend_schema(description='Get restaurant by ID.'),
     create=extend_schema(description='Create restaurant.'),
-    update=extend_schema(description='Update restaurant by ID.'),
-    partial_update=extend_schema(description='Partially update restaurant by ID.'),
     destroy=extend_schema(description='Delete restaurant by ID.'),
+    list=extend_schema(description='List all restaurants.'),
+    partial_update=extend_schema(description='Partially update restaurant by ID.'),
+    retrieve=extend_schema(description='Get restaurant by ID.'),
     scrape_menu=extend_schema(
         description='Scrape restaurant menu.',
         request=OpenApiRequest(OpenApiTypes.NONE),
@@ -35,12 +35,13 @@ import restaurant.v1.serializers as serializers
         request=OpenApiRequest(OpenApiTypes.NONE),
         responses={status.HTTP_202_ACCEPTED: OpenApiResponse(description='Restaurant scraping task added to queue')},
     ),
+    update=extend_schema(description='Update restaurant by ID.'),
 )
 class RestaurantViewSet(viewsets.ModelViewSet):
-    serializer_class = serializers.RestaurantSerializer
-    model = serializer_class.Meta.model
-    queryset = model.objects.select_related('category', 'city').order_by('pk')
     filterset_class = RestaurantFilterSet
+    model = models.Restaurant
+    queryset = model.objects.select_related('category', 'city').order_by('pk')
+    serializer_class = serializers.RestaurantSerializer
 
     def get_queryset(self) -> QuerySet:
         if self.action == 'list':
@@ -68,6 +69,8 @@ class RestaurantViewSet(viewsets.ModelViewSet):
 
 @extend_schema(tags=['dishes'])
 @extend_schema_view(
+    create=extend_schema(description='Create dish.'),
+    destroy=extend_schema(description='Delete dish by ID.'),
     list=extend_schema(
         description='List dishes.',
         parameters=[
@@ -91,17 +94,15 @@ class RestaurantViewSet(viewsets.ModelViewSet):
             ),
         ]
     ),
-    retrieve=extend_schema(description='Get dish by ID.'),
-    create=extend_schema(description='Create dish.'),
-    update=extend_schema(description='Update dish by ID.'),
     partial_update=extend_schema(description='Partially update dish by ID.'),
-    destroy=extend_schema(description='Delete dish by ID.'),
+    retrieve=extend_schema(description='Get dish by ID.'),
+    update=extend_schema(description='Update dish by ID.'),
 )
 class DishViewSet(viewsets.ModelViewSet):
-    serializer_class = serializers.DishSerializer
-    model = serializer_class.Meta.model
-    queryset = model.objects.select_related('restaurant').order_by('pk')
     filterset_class = DishFilterSet
+    model = models.Dish
+    queryset = model.objects.select_related('restaurant').order_by('pk')
+    serializer_class = serializers.DishSerializer
 
     def get_queryset(self) -> QuerySet:
         queryset = super().get_queryset()
