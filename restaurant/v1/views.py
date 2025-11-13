@@ -12,7 +12,7 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 
 from restaurant.elastic import DishElasticQueryManager
-from restaurant.filters import DishFilterSet
+from restaurant.filters import DishFilterSet, RestaurantFilterSet
 import restaurant.tasks as tasks
 import restaurant.v1.serializers as serializers
 
@@ -40,6 +40,7 @@ class RestaurantViewSet(viewsets.ModelViewSet):
     serializer_class = serializers.RestaurantSerializer
     model = serializer_class.Meta.model
     queryset = model.objects.select_related('category', 'city').order_by('pk')
+    filterset_class = RestaurantFilterSet
 
     def get_queryset(self) -> QuerySet:
         if self.action == 'list':

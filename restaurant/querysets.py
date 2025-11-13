@@ -1,6 +1,5 @@
 from django.db import models as django_models
 from django.db.models import F, Q
-from django.db.models.functions import TruncDate
 from django.db.models.query import QuerySet
 
 
@@ -19,7 +18,6 @@ class DishQuerySet(django_models.QuerySet):
         """Get dishes which have restaurants with no update date
         or dishes updated no later than corresponding restaurants' menus.
         """
-        return (
-            self.annotate(update_date=TruncDate('updated_at'))
-            .filter(Q(restaurant__menu_update_date__isnull=True) | Q(update_date__gte=F('restaurant__menu_update_date')))
+        return self.filter(
+            Q(restaurant__menu_update_date__isnull=True) | Q(updated_at__date__gte=F('restaurant__menu_update_date'))
         )
