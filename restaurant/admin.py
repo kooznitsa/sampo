@@ -64,8 +64,11 @@ class RestaurantAdmin(admin.ModelAdmin):
     change_list_template = 'change_list.html'
     date_hierarchy = 'updated_at'
     form = RestaurantForm
-    list_display = ('id', 'name', 'category', 'address', 'ranking', 'menu_url', 'has_dishes', 'has_coords', 'menu_update_date')
-    list_filter = ('category', filters.RestaurantRankingFilter)
+    list_display = (
+        'id', 'name', 'category', 'address', 'ranking', 'num_of_reviews', 'menu_url', 'has_dishes',
+        'has_coords', 'menu_update_date',
+    )
+    list_filter = ('category', 'is_active', filters.RestaurantRankingFilter, filters.RestaurantNumOfReviewsFilter)
     list_select_related = ('category', 'city')
     readonly_fields = ('menu_update_date', 'nearest_stations')
     search_fields = ('name', 'menu_url')
@@ -146,7 +149,7 @@ class DishAdmin(admin.ModelAdmin):
     actions_on_bottom = True
     autocomplete_fields = ('restaurant',)
     list_display = ('id', 'name', 'price', 'restaurant_link', 'weight', 'weight_unit', 'quantity')
-    list_filter = (filters.DishPriceFilter,)
+    list_filter = (filters.DishAvailableFilter, filters.DishPriceFilter,)
     list_select_related = ('restaurant',)
     search_fields = ('name', 'restaurant__pk')
     search_help_text = 'Поиск по полям «Название блюда» и «ID ресторана»'
