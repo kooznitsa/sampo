@@ -29,6 +29,7 @@ help:
 	@echo "  dump                                              to create database dump"
 	@echo "  elastic                                           to create and populate the Elasticsearch index and mapping"
 	@echo "  entercontainer                                    to enter backend container"
+	@echo "  save_nearest_stations                             to save restaurants' nearest stations"
 	@echo "  linter                                            to run linter"
 	@echo "  load                                              to load fixtures"
 	@echo "  migrations                                        to create migration file with a default name"
@@ -231,3 +232,8 @@ scrape_restaurant:
 .PHONY: update_all_restaurant_data
 update_all_restaurant_data:
 	$(DOCKER_EXEC) $(MANAGE) update_all_restaurant_data $(WITHOUT_COORDS_ONLY)
+
+# Generate and save restaurants' nearest stations
+.PHONY: save_nearest_stations
+save_nearest_stations:
+	$(DOCKER_EXEC) $(MANAGE) save_nearest_stations

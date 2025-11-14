@@ -5,6 +5,8 @@ from django.test import tag, TestCase
 
 from djmoney.money import Money
 
+from geodata.models import Station
+from geodata.tests.factories import StationFactory
 from restaurant.filters import DishFilterSet, RestaurantFilterSet
 import restaurant.models as models
 import restaurant.tests.factories as factories
@@ -56,6 +58,54 @@ class TestDishFilters(TestCase):
         filterset = DishFilterSet({'price': '10_000'}, queryset=self.queryset)
 
         self.assertEqual(filterset.qs.count(), self.batch_size)
+
+
+@tag('filters', 'dish_filters', 'dish_stations_filter')
+class TestDishStationsFilters(TestCase):
+
+    def setUp(self) -> None:
+        self.batch_size = 5
+        self.category = factories.CategoryFactory.create()
+        city = factories.CityFactory.create()
+
+        self.restaurant_stations = [
+            {'name': 'Адмиралтейская', 'latitude': 59.935833, 'longitude': 30.315000},
+            {'name': 'Невский проспект', 'latitude': 59.935000, 'longitude': 30.328333},
+            {'name': 'Гостиный двор', 'latitude': 59.933611, 'longitude': 30.332778},
+            {'name': 'Сенная площадь', 'latitude': 59.926944, 'longitude': 30.320278},
+            {'name': 'Спасская', 'latitude': 59.926667, 'longitude': 30.319444},
+        ]
+        self.other_stations = [
+            {'name': 'Московская', 'latitude': 59.851944, 'longitude': 30.321944},
+            {'name': 'Чернышевская', 'latitude': 59.944444, 'longitude': 30.359722},
+        ]
+        for station in self.restaurant_stations + self.other_stations:
+            StationFactory.create(name=station['name'], latitude=station['latitude'], longitude=station['longitude'])
+
+        self.restaurant = factories.RestaurantFactory.create(
+            city=city, category=self.category, latitude=59.938352, longitude=30.321111,
+        )
+        self.restaurant.save_nearest_stations()
+        self.another_restaurant = factories.RestaurantFactory.create(
+            city=city, category=self.category, latitude=59.869602, longitude=30.319100,
+        )
+        self.another_restaurant.save_nearest_stations()
+
+        factories.DishFactory.create_batch(self.batch_size, restaurant=self.restaurant)
+        factories.DishFactory.create_batch(self.batch_size - 1, restaurant=self.another_restaurant)
+        self.queryset = models.Dish.objects.all()
+
+    def test_filter_by_station(self) -> None:
+        cases = (
+            ('Адмиралтейская', self.batch_size),
+            ('Московская', self.batch_size - 1),
+            ('Чернышевская', 0),
+        )
+        for name, expected in cases:
+            with self.subTest(name=name, expected=expected):
+                filterset = DishFilterSet({'station': Station.objects.filter(name=name).first().id}, queryset=self.queryset)
+
+                self.assertEqual(filterset.qs.count(), expected)
 
 
 @tag('filters', 'restaurant_filters')
