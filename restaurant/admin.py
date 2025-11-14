@@ -97,13 +97,12 @@ class RestaurantAdmin(admin.ModelAdmin):
 
     @admin.display(description='Ближайшие станции')
     def nearest_stations(self, obj: models.Restaurant) -> Any | SafeString:
-        nearest_stations = obj.nearest_stations
-        if not nearest_stations:
+        if not obj.nearest_stations:
             return mark_safe('<span>Координаты ресторана не найдены.</span>')
         return format_html_join(
             sep=mark_safe('<br>'),
             format_string='<li>{} ({}) — {} км</li>',
-            args_generator=((r.name, r.line, '{0:.1f}'.format(d)) for r, d in nearest_stations)
+            args_generator=((i.station.name, i.station.line, '{0:.1f}'.format(i.distance_km)) for i in obj.nearest_stations)
         )
 
     @admin.action(description='Обновить данные выбранных Ресторанов')
@@ -149,7 +148,7 @@ class DishAdmin(admin.ModelAdmin):
     actions_on_bottom = True
     autocomplete_fields = ('restaurant',)
     list_display = ('id', 'name', 'price', 'restaurant_link', 'weight', 'weight_unit', 'quantity')
-    list_filter = (filters.DishAvailableFilter, filters.DishPriceFilter,)
+    list_filter = (filters.DishAvailableFilter, filters.DishPriceFilter, filters.DishStationFilter)
     list_select_related = ('restaurant',)
     search_fields = ('name', 'restaurant__pk')
     search_help_text = 'Поиск по полям «Название блюда» и «ID ресторана»'

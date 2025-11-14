@@ -78,22 +78,18 @@ class RestaurantSerializer(serializers.ModelSerializer):
         return instance
 
     def get_nearest_stations(self, instance: models.Restaurant) -> list[dict] | None:
-        if stations := instance.nearest_stations:
+        if instance.nearest_stations:
             return [
                 {
-                    'name': station.name,
-                    'line': station.line,
-                    'distance': distance,
-                } for station, distance in stations
+                    'name': rel.station.name,
+                    'line': rel.station.line,
+                    'latitude': rel.station.latitude,
+                    'longitude': rel.station.longitude,
+                    'distance_km': rel.distance_km,
+                }
+                for rel in instance.nearest_stations
             ]
         return None
-
-
-class RestaurantShortSerializer(serializers.ModelSerializer):
-
-    class Meta:
-        model = models.Restaurant
-        fields = ('id', 'name', 'address')
 
 
 class TagSerializer(serializers.ModelSerializer):
@@ -117,7 +113,7 @@ class DishSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance: models.Dish) -> dict:
         rep = super().to_representation(instance)
-        rep['restaurant'] = RestaurantShortSerializer(instance.restaurant, context=self.context).data
+        rep['restaurant'] = RestaurantSerializer(instance.restaurant, context=self.context).data
         rep['tags'] = TagSerializer(instance.tags.all(), many=True, context=self.context).data
         return rep
 

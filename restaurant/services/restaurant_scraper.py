@@ -88,5 +88,6 @@ class RestaurantScraper:
             if serializer.is_valid():
                 obj = serializer.save()
                 info_logger.info(f'Saved restaurant ID={obj.id}, name={obj.name}, {address=}.')
+                obj.save_nearest_stations()
             else:
                 error_logger.error(serializer.errors)
