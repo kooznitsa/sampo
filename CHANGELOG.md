@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Restaurant and dish filters in API ([#26](https://github.com/kooznitsa/sampo/pull/26)).
 - Tests for filters ([#26](https://github.com/kooznitsa/sampo/pull/26)).
 - Filter dishes by restaurant nearest stations in API and admin ([#28](https://github.com/kooznitsa/sampo/pull/28)).
+- Tests for admin ([#30](https://github.com/kooznitsa/sampo/pull/30)).
 
 ### Fixed
 

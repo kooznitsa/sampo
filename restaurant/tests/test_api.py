@@ -5,10 +5,10 @@ from django.test import tag, TestCase
 from rest_framework import status
 from rest_framework.test import APIClient
 
+from authentication.tests.factories import DEFAULT_PASSWORD, UserFactory
 import geodata.models as geodata_models
 import restaurant.models as models
 import restaurant.tests.factories as factories
-from restaurant.tests.factories import DEFAULT_PASSWORD
 
 logger = logging.getLogger('info_logger')
 
@@ -19,7 +19,7 @@ class AuthenticatedAPITestCase(TestCase):
 
     def setUp(self) -> None:
         self.client = APIClient()
-        self.user = factories.UserFactory.create()
+        self.user = UserFactory.create()
         self.password = DEFAULT_PASSWORD
         response = self.client.post(
             f'{BASE_URL}token/',

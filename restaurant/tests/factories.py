@@ -3,11 +3,7 @@ from typing import Any
 import factory
 from factory import fuzzy
 
-from django.contrib.auth.models import User
-
 from restaurant.enums import WeightEnum
-
-DEFAULT_PASSWORD = 'defaultpassword'
 
 
 class CategoryFactory(factory.django.DjangoModelFactory):
@@ -110,13 +106,3 @@ class DishFactory(factory.django.DjangoModelFactory):
             'comment': obj.comment,
             'tags': [str(tag) for tag in tags],
         }
-
-
-class UserFactory(factory.django.DjangoModelFactory):
-    username = factory.Faker('user_name')
-    email = factory.Faker('email')
-    password = factory.PostGenerationMethodCall('set_password', DEFAULT_PASSWORD)
-
-    class Meta:
-        model = User
-        django_get_or_create = ('username',)
