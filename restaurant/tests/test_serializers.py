@@ -7,11 +7,12 @@ import restaurant.tests.factories as factories
 
 @tag('restaurant', 'restaurant_serializer')
 class RestaurantSerializerTestCase(TestCase):
-    restaurant_name = 'Лапшичная №1'
-    restaurant_address = 'Набережная канала Грибоедова'
-    restaurant_ranking = 4.5
 
     def setUp(self) -> None:
+        self.restaurant_name = 'Лапшичная №1'
+        self.restaurant_address = 'Набережная канала Грибоедова'
+        self.restaurant_ranking = 4.5
+
         category = factories.CategoryFactory.create()
         city = factories.CityFactory.create()
         factories.RestaurantFactory.create(category=category, city=city, ranking=5.0)
@@ -88,10 +89,11 @@ class RestaurantSerializerTestCase(TestCase):
 
 @tag('dish', 'dish_serializer')
 class DishSerializerTestCase(TestCase):
-    dish_name = 'Суп'
-    dish_comment = 'Очень вкусный суп'
 
     def setUp(self) -> None:
+        self.dish_name = 'Суп'
+        self.dish_comment = 'Очень вкусный суп'
+
         category = factories.CategoryFactory.create()
         city = factories.CityFactory.create()
         restaurant = factories.RestaurantFactory.create(category=category, city=city)

@@ -3,15 +3,15 @@ from datetime import datetime
 from typing import Any
 
 from django.contrib import admin, messages
-from django.core.handlers.wsgi import WSGIRequest
 from django.db.models import BooleanField, Case, Exists, OuterRef, Q, Value, When
 from django.db.models.query import QuerySet
 from django.forms import ModelForm, TextInput
-from django.http import HttpResponse
+from django.http import HttpRequest, HttpResponse
 from django.urls import reverse
 from django.utils.html import format_html, format_html_join
 from django.utils.safestring import mark_safe, SafeString
 
+from restaurant.elastic import DishElasticQueryManager
 import restaurant.filters as filters
 import restaurant.models as models
 import restaurant.tasks as tasks
@@ -64,50 +64,17 @@ class RestaurantAdmin(admin.ModelAdmin):
     change_list_template = 'change_list.html'
     date_hierarchy = 'updated_at'
     form = RestaurantForm
-    list_display = ('id', 'name', 'category', 'address', 'ranking', 'menu_url', 'has_dishes', 'has_coords', 'menu_update_date')
-    list_filter = ('category', filters.RestaurantRankingFilter)
+    list_display = (
+        'id', 'name', 'category', 'address', 'ranking', 'num_of_reviews', 'menu_url', 'has_dishes',
+        'has_coords', 'menu_update_date',
+    )
+    list_filter = ('category', 'is_active', filters.RestaurantRankingFilter, filters.RestaurantNumOfReviewsFilter)
     list_select_related = ('category', 'city')
     readonly_fields = ('menu_update_date', 'nearest_stations')
     search_fields = ('name', 'menu_url')
     search_help_text = 'Поиск по полям «Название ресторана» и «Сайт меню»'
 
-    @admin.action(description='Обновить данные выбранных Ресторанов')
-    def update_restaurant(self, request: WSGIRequest, queryset: QuerySet) -> None:
-        successful_ids = []
-        for restaurant in queryset:
-            successful_ids.append(str(restaurant.id))
-            tasks.scrape_restaurant_task.delay(restaurant.id)
-
-        self.message_user(
-            request,
-            f'Рестораны поставлены в очередь для обновления данных: {", ".join(successful_ids)}',
-            messages.SUCCESS,
-        )
-
-    @admin.action(description='Обновить меню выбранных Ресторанов')
-    def update_menu(self, request: WSGIRequest, queryset: QuerySet) -> None:
-        successful_ids = []
-        for restaurant in queryset:
-            successful_ids.append(str(restaurant.id))
-            tasks.scrape_menu_task.delay(restaurant.id)
-
-        self.message_user(
-            request,
-            f'Рестораны поставлены в очередь для обновления меню: {", ".join(successful_ids)}',
-            messages.SUCCESS,
-        )
-
-    @admin.action(description='Экспортировать в CSV')
-    def export_csv(self, request: WSGIRequest, queryset: QuerySet) -> HttpResponse:
-        response = HttpResponse(content_type='text/csv')
-        response['Content-Disposition'] = f'attachment; filename=restaurants_{datetime.today()}.csv'
-        writer = csv.writer(response)
-        writer.writerow(['ID', 'Название', 'Категория', 'Город', 'Адрес', 'URL', 'Рейтинг', 'Дата обновления меню'])
-        for i in queryset.select_related('category', 'city'):
-            writer.writerow([i.id, i.name, i.category.name, i.city.name, i.address, i.menu_url, i.ranking, i.menu_update_date])
-        return response
-
-    def get_queryset(self, request: WSGIRequest) -> QuerySet:
+    def get_queryset(self, request: HttpRequest) -> QuerySet:
         queryset = super().get_queryset(request)
         if request.resolver_match.url_name == 'restaurant_restaurant_changelist':
             queryset = queryset.annotate(
@@ -130,14 +97,49 @@ class RestaurantAdmin(admin.ModelAdmin):
 
     @admin.display(description='Ближайшие станции')
     def nearest_stations(self, obj: models.Restaurant) -> Any | SafeString:
-        nearest_stations = obj.nearest_stations
-        if not nearest_stations:
+        if not obj.nearest_stations:
             return mark_safe('<span>Координаты ресторана не найдены.</span>')
         return format_html_join(
             sep=mark_safe('<br>'),
             format_string='<li>{} ({}) — {} км</li>',
-            args_generator=((r.name, r.line, '{0:.1f}'.format(d)) for r, d in nearest_stations)
+            args_generator=((i.station.name, i.station.line, '{0:.1f}'.format(i.distance_km)) for i in obj.nearest_stations)
         )
+
+    @admin.action(description='Обновить данные выбранных Ресторанов')
+    def update_restaurant(self, request: HttpRequest, queryset: QuerySet) -> None:
+        successful_ids = []
+        for restaurant in queryset:
+            successful_ids.append(str(restaurant.id))
+            tasks.scrape_restaurant_task.delay(restaurant.id)
+
+        self.message_user(
+            request,
+            f'Рестораны поставлены в очередь для обновления данных: {", ".join(successful_ids)}',
+            messages.SUCCESS,
+        )
+
+    @admin.action(description='Обновить меню выбранных Ресторанов')
+    def update_menu(self, request: HttpRequest, queryset: QuerySet) -> None:
+        successful_ids = []
+        for restaurant in queryset:
+            successful_ids.append(str(restaurant.id))
+            tasks.scrape_menu_task.delay(restaurant.id)
+
+        self.message_user(
+            request,
+            f'Рестораны поставлены в очередь для обновления меню: {", ".join(successful_ids)}',
+            messages.SUCCESS,
+        )
+
+    @admin.action(description='Экспортировать в CSV')
+    def export_csv(self, request: HttpRequest, queryset: QuerySet) -> HttpResponse:
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = f'attachment; filename=restaurants_{datetime.today()}.csv'
+        writer = csv.writer(response)
+        writer.writerow(['ID', 'Название', 'Категория', 'Город', 'Адрес', 'URL', 'Рейтинг', 'Дата обновления меню'])
+        for i in queryset.select_related('category', 'city'):
+            writer.writerow([i.id, i.name, i.category.name, i.city.name, i.address, i.menu_url, i.ranking, i.menu_update_date])
+        return response
 
 
 @admin.register(models.Dish)
@@ -146,13 +148,30 @@ class DishAdmin(admin.ModelAdmin):
     actions_on_bottom = True
     autocomplete_fields = ('restaurant',)
     list_display = ('id', 'name', 'price', 'restaurant_link', 'weight', 'weight_unit', 'quantity')
-    list_filter = (filters.DishPriceFilter,)
+    list_filter = (filters.DishAvailableFilter, filters.DishPriceFilter, filters.DishStationFilter)
     list_select_related = ('restaurant',)
     search_fields = ('name', 'restaurant__pk')
     search_help_text = 'Поиск по полям «Название блюда» и «ID ресторана»'
 
+    def get_search_results(self, request: HttpRequest, queryset: QuerySet, search_term: str) -> tuple[QuerySet, bool]:
+        if not search_term:
+            return queryset, False
+
+        if search_term.isnumeric():
+            queryset = queryset.filter(restaurant__pk=search_term)
+            return queryset, False
+
+        query = DishElasticQueryManager.query_multi_match(search_term)
+        queryset = DishElasticQueryManager().perform_search(query, search_term)
+        return queryset, False
+
+    @admin.display(description='Ресторан')
+    def restaurant_link(self, obj: models.Dish) -> Any | SafeString:
+        url = reverse('admin:restaurant_restaurant_change', args=[obj.restaurant.id])
+        return format_html(f'<a href="{url}">{obj.restaurant}</a>')
+
     @admin.action(description='Экспортировать в CSV')
-    def export_csv(self, request: WSGIRequest, queryset: QuerySet) -> HttpResponse:
+    def export_csv(self, request: HttpRequest, queryset: QuerySet) -> HttpResponse:
         response = HttpResponse(content_type='text/csv')
         response['Content-Disposition'] = f'attachment; filename=dishes_{datetime.today()}.csv'
         writer = csv.writer(response)
@@ -164,8 +183,3 @@ class DishAdmin(admin.ModelAdmin):
             writer.writerow(
                 [i.id, i.name, i.price.amount, i.restaurant.name, i.restaurant.address, i.weight, i.weight_unit, i.quantity])
         return response
-
-    @admin.display(description='Ресторан')
-    def restaurant_link(self, obj: models.Dish) -> Any | SafeString:
-        url = reverse('admin:restaurant_restaurant_change', args=[obj.restaurant.id])
-        return format_html(f'<a href="{url}">{obj.restaurant}</a>')

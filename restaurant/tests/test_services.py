@@ -9,6 +9,7 @@ from django.utils import timezone
 
 from bs4 import BeautifulSoup
 
+from restaurant.elastic import DishElasticQueryManager
 from restaurant.enums import WeightEnum
 from restaurant.exceptions import MenuNotFoundException
 import restaurant.models as models
@@ -212,22 +213,24 @@ class TestParsers(TestCase):
 
 @tag('services', 'scrapers', 'restaurant_scraper')
 class TestRestaurantScraper(unittest.TestCase):
-    restaurant_data = {
-        'name': 'Nola Jazz Bar',
-        'city': 'Санкт-Петербург',
-        'address': 'Волынский пер., 2, Санкт-Петербург',
-        'phone_number': '+7 (981) 916-79-33',
-        'ranking': 5.0,
-        'num_of_reviews': 894,
-        'latitude': 59.938352,
-        'longitude': 30.321111,
-        'menu_url': 'https://yandex.ru/maps/org/nola_jazz_bar/233512176817/menu/',
-    }
-    category = 'Ресторан'
-    timeout = 5
-    template = 'yandex/restaurant_card.html'
-    template_list = 'yandex/restaurant_card_from_list.html'
-    template_something_wrong = 'yandex/something_wrong.html'
+
+    def setUp(self) -> None:
+        self.restaurant_data = {
+            'name': 'Nola Jazz Bar',
+            'city': 'Санкт-Петербург',
+            'address': 'Волынский пер., 2, Санкт-Петербург',
+            'phone_number': '+7 (981) 916-79-33',
+            'ranking': 5.0,
+            'num_of_reviews': 894,
+            'latitude': 59.938352,
+            'longitude': 30.321111,
+            'menu_url': 'https://yandex.ru/maps/org/nola_jazz_bar/233512176817/menu/',
+        }
+        self.category = 'Ресторан'
+        self.timeout = 5
+        self.template = 'yandex/restaurant_card.html'
+        self.template_list = 'yandex/restaurant_card_from_list.html'
+        self.template_something_wrong = 'yandex/something_wrong.html'
 
     @patch('restaurant.services.restaurant_scraper.BeautifulSoup')
     @patch.object(services.RestaurantScraper, 'write_data_to_db')
@@ -429,21 +432,23 @@ class TestRestaurantScraper(unittest.TestCase):
 
 @tag('services', 'scrapers', 'menu_scraper')
 class TestMenuScraper(unittest.TestCase):
-    menu_data = {
-        'name': 'Буйабес 1 шт.',
-        'price': 890.0,
-        'weight': 450.0,
-        'weight_unit': 'г',
-        'quantity': 1,
-        'comment': 'марсельская уха с треской, креветкой, мидиями и соусом Руй на крутонах',
-    }
-    menu_url = 'https://yandex.ru/maps/org/nola_jazz_bar/233512176817/menu/'
-    timeout = 5
-    template = 'yandex/dish_card.html'
-    template_list = 'yandex/restaurant_card_from_list.html'
 
     def setUp(self) -> None:
         super().setUp()
+
+        self.menu_data = {
+            'name': 'Буйабес 1 шт.',
+            'price': 890.0,
+            'weight': 450.0,
+            'weight_unit': 'г',
+            'quantity': 1,
+            'comment': 'марсельская уха с треской, креветкой, мидиями и соусом Руй на крутонах',
+        }
+        self.menu_url = 'https://yandex.ru/maps/org/nola_jazz_bar/233512176817/menu/'
+        self.timeout = 5
+        self.template = 'yandex/dish_card.html'
+        self.template_list = 'yandex/restaurant_card_from_list.html'
+
         category = factories.CategoryFactory.create()
         city = factories.CityFactory.create()
         factories.RestaurantFactory.create(category=category, city=city, menu_url=self.menu_url)
@@ -592,18 +597,20 @@ class TestMenuScraper(unittest.TestCase):
 
 @tag('services', 'scrapers', 'link_collector')
 class TestLinkCollector(unittest.TestCase):
-    restaurant_data = {
-        'name': 'Nola Jazz Bar',
-        'city': 'Санкт-Петербург',
-        'address': 'Волынский пер., 2, Санкт-Петербург',
-        'phone_number': '+7 (981) 916-79-33',
-        'ranking': 5.0,
-        'num_of_reviews': 894,
-        'latitude': 59.938352,
-        'longitude': 30.321111,
-        'menu_url': 'https://yandex.ru/maps/org/nola_jazz_bar/233512176817/menu/',
-    }
-    timeout = 5
+
+    def setUp(self) -> None:
+        self.restaurant_data = {
+            'name': 'Nola Jazz Bar',
+            'city': 'Санкт-Петербург',
+            'address': 'Волынский пер., 2, Санкт-Петербург',
+            'phone_number': '+7 (981) 916-79-33',
+            'ranking': 5.0,
+            'num_of_reviews': 894,
+            'latitude': 59.938352,
+            'longitude': 30.321111,
+            'menu_url': 'https://yandex.ru/maps/org/nola_jazz_bar/233512176817/menu/',
+        }
+        self.timeout = 5
 
     @patch('restaurant.services.link_collector.BeautifulSoup')
     @patch.object(services.RestaurantScraper, 'write_data_to_db')
@@ -628,3 +635,58 @@ class TestLinkCollector(unittest.TestCase):
         mock_driver.get.assert_called_once()
         mock_parse.assert_called_once_with(mock_card)
         mock_write_db.assert_called_once_with(mock_parse.return_value, 'Ресторан')
+
+
+@tag('services', 'elasticsearch', 'elasticsearch_dish')
+class TestElasticsearchDish(TestCase):
+
+    def setUp(self) -> None:
+        self.dish_names = (
+            'котлета по-киевски', 'котлеты по-киевски', 'КОТЛЕТА ПО КИЕВСКИ', 'киевская котлета',
+            'котлета из Киева', 'пожарская котлета', 'котлета с сыром',
+        )
+        self.search_text = 'котлета по-киевски'
+
+        category = factories.CategoryFactory.create()
+        city = factories.CityFactory.create()
+        factories.RestaurantFactory.create(category=category, city=city)
+
+    @patch.object(DishElasticQueryManager, 'perform_search')
+    @patch.object(DishElasticQueryManager, 'query_match_by_name')
+    def test_search_by_name_returns_all_dishes(self, mock_query_match: MagicMock, mock_perform_search: MagicMock) -> None:
+        for name in self.dish_names:
+            factories.DishFactory.create(restaurant=models.Restaurant.objects.first(), name=name)
+
+        mock_query_match.return_value = MagicMock(name='mocked_query_object')
+        mock_perform_search.return_value = models.Dish.objects.all()
+
+        query = DishElasticQueryManager.query_match_by_name(self.search_text)
+        queryset = DishElasticQueryManager().perform_search(query, self.search_text)
+
+        self.assertEqual(queryset.count(), len(self.dish_names))
+        mock_query_match.assert_called_once_with(self.search_text)
+        mock_perform_search.assert_called_once()
+
+    @patch.object(DishElasticQueryManager, 'perform_search')
+    @patch.object(DishElasticQueryManager, 'query_multi_match')
+    def test_search_by_multiple_fields_returns_exact_matches(self, mock_query_multi: MagicMock, mock_perform_search: MagicMock) -> None:
+        restaurant = models.Restaurant.objects.first()
+        tag_name, comment, *names = self.dish_names
+        tag_obj = factories.TagFactory.create(name=tag_name)
+        dish = factories.DishFactory.create(restaurant=restaurant)
+        dish.tags.add(tag_obj)
+        factories.DishFactory.create(restaurant=restaurant, comment=comment)
+        for name in names:
+            factories.DishFactory.create(restaurant=restaurant, name=name)
+
+        num_of_returned_objects = 4
+
+        mock_query_multi.return_value = MagicMock(name='mocked_multi_query_object')
+        mock_perform_search.return_value = models.Dish.objects.all()[:num_of_returned_objects]
+
+        query = DishElasticQueryManager.query_multi_match(self.search_text)
+        queryset = DishElasticQueryManager().perform_search(query, self.search_text)
+
+        self.assertEqual(queryset.count(), num_of_returned_objects)
+        mock_query_multi.assert_called_once_with(self.search_text)
+        mock_perform_search.assert_called_once()

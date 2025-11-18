@@ -37,8 +37,8 @@ class SlugRelatedFieldWithCreate(SlugRelatedField):
 class RestaurantSerializer(serializers.ModelSerializer):
     category = SlugRelatedFieldWithCreate(slug_field='name', queryset=models.Category.objects.all(), required=False)
     city = SlugRelatedFieldWithCreate(slug_field='name', queryset=geodata_models.City.objects.all())
-    ranking = serializers.FloatField(min_value=0, max_value=5)
     nearest_stations = serializers.SerializerMethodField(source='get_nearest_stations')
+    ranking = serializers.FloatField(min_value=0, max_value=5)
 
     class Meta:
         model = models.Restaurant
@@ -78,35 +78,33 @@ class RestaurantSerializer(serializers.ModelSerializer):
         return instance
 
     def get_nearest_stations(self, instance: models.Restaurant) -> list[dict] | None:
-        if stations := instance.nearest_stations:
+        if instance.nearest_stations:
             return [
                 {
-                    'name': station.name,
-                    'line': station.line,
-                    'distance': distance,
-                } for station, distance in stations
+                    'name': rel.station.name,
+                    'line': rel.station.line,
+                    'latitude': rel.station.latitude,
+                    'longitude': rel.station.longitude,
+                    'distance_km': rel.distance_km,
+                }
+                for rel in instance.nearest_stations
             ]
         return None
 
 
-class RestaurantShortSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = models.Restaurant
-        fields = ('id', 'name', 'address')
-
-
 class TagSerializer(serializers.ModelSerializer):
+
     class Meta:
         model = models.Tag
         fields = ('id', 'name',)
 
 
 class DishSerializer(serializers.ModelSerializer):
+    price = MoneyField()
     restaurant = serializers.PrimaryKeyRelatedField(
         queryset=models.Restaurant.objects.only('id', 'name', 'address'),
         write_only=True,
     )
-    price = MoneyField()
     tags = SlugRelatedFieldWithCreate(slug_field='name', queryset=models.Tag.objects.all(), many=True, required=False)
 
     class Meta:
@@ -115,7 +113,7 @@ class DishSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance: models.Dish) -> dict:
         rep = super().to_representation(instance)
-        rep['restaurant'] = RestaurantShortSerializer(instance.restaurant, context=self.context).data
+        rep['restaurant'] = RestaurantSerializer(instance.restaurant, context=self.context).data
         rep['tags'] = TagSerializer(instance.tags.all(), many=True, context=self.context).data
         return rep
 

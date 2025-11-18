@@ -15,6 +15,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
+## [1.2.1] - 2025-11-18
+
+### Added
+
+- Full-text search for dishes by name and by multiple fields ([#24](https://github.com/kooznitsa/sampo/pull/24)).
+- Restaurant and dish filters in API ([#26](https://github.com/kooznitsa/sampo/pull/26)).
+- Tests for filters ([#26](https://github.com/kooznitsa/sampo/pull/26)).
+- Filter dishes by restaurant nearest stations in API and admin ([#28](https://github.com/kooznitsa/sampo/pull/28)).
+- Tests for admin ([#30](https://github.com/kooznitsa/sampo/pull/30)).
+
 ## [1.1.1] - 2025-11-07
 
 ### Added

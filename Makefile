@@ -25,8 +25,12 @@ help:
 	@echo "  checkmigrations                                   to check migrations"
 	@echo "  collect_links                                     to collect restaurant links"
 	@echo "  coverage                                          to get test coverage report"
+	@echo "  coverage_run                                      to run coverage"
 	@echo "  createsuperuser                                   to create super user"
 	@echo "  dump                                              to create database dump"
+	@echo "  elastic                                           to create and populate the Elasticsearch index and mapping"
+	@echo "  entercontainer                                    to enter backend container"
+	@echo "  save_nearest_stations                             to save restaurants' nearest stations"
 	@echo "  linter                                            to run linter"
 	@echo "  load                                              to load fixtures"
 	@echo "  migrations                                        to create migration file with a default name"
@@ -155,6 +159,14 @@ load:
 	$(DOCKER_EXEC) $(MANAGE) loaddata db_data.json
 
 
+# -------------- ELASTICSEARCH --------------
+
+# Create and populate the Elasticsearch index and mapping
+.PHONY: elastic
+elastic:
+	docker exec -it $(APP_NAME)_backend $(MANAGE) search_index --rebuild
+
+
 # -------------- LINTER --------------
 
 # Run linter
@@ -192,6 +204,11 @@ testall:
 testapp:
 	$(DOCKER_EXEC) $(MANAGE) test $(APP).tests --tag=$(TAG) --settings=core.settings.test
 
+# Run coverage
+.PHONY: coverage_run
+coverage_run:
+	$(DOCKER_EXEC) poetry run coverage run manage.py test
+
 # Get coverage report
 .PHONY: coverage
 coverage:
@@ -221,3 +238,8 @@ scrape_restaurant:
 .PHONY: update_all_restaurant_data
 update_all_restaurant_data:
 	$(DOCKER_EXEC) $(MANAGE) update_all_restaurant_data $(WITHOUT_COORDS_ONLY)
+
+# Generate and save restaurants' nearest stations
+.PHONY: save_nearest_stations
+save_nearest_stations:
+	$(DOCKER_EXEC) $(MANAGE) save_nearest_stations

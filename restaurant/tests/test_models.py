@@ -13,6 +13,7 @@ logger = logging.getLogger('info_logger')
 
 @tag('category', 'models', 'category_model')
 class CategoryModelTestCase(TestCase):
+
     def setUp(self) -> None:
         factories.CategoryFactory.create()
 
@@ -24,6 +25,7 @@ class CategoryModelTestCase(TestCase):
 
 @tag('restaurant', 'models', 'restaurant_model')
 class RestaurantModelTestCase(TestCase):
+
     def setUp(self) -> None:
         category = factories.CategoryFactory.create()
         city = factories.CityFactory.create()
@@ -40,6 +42,7 @@ class RestaurantModelTestCase(TestCase):
 
 @tag('dish', 'models', 'dish_model')
 class DishModelTestCase(TestCase):
+
     def setUp(self) -> None:
         restaurant = factories.RestaurantFactory.create()
         dish = factories.DishFactory.create(restaurant=restaurant)

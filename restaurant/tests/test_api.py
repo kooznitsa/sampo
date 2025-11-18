@@ -5,10 +5,10 @@ from django.test import tag, TestCase
 from rest_framework import status
 from rest_framework.test import APIClient
 
+from authentication.tests.factories import DEFAULT_PASSWORD, UserFactory
 import geodata.models as geodata_models
 import restaurant.models as models
 import restaurant.tests.factories as factories
-from restaurant.tests.factories import DEFAULT_PASSWORD
 
 logger = logging.getLogger('info_logger')
 
@@ -16,9 +16,10 @@ BASE_URL = '/api/v1/'
 
 
 class AuthenticatedAPITestCase(TestCase):
+
     def setUp(self) -> None:
         self.client = APIClient()
-        self.user = factories.UserFactory.create()
+        self.user = UserFactory.create()
         self.password = DEFAULT_PASSWORD
         response = self.client.post(
             f'{BASE_URL}token/',
@@ -35,15 +36,17 @@ class AuthenticatedAPITestCase(TestCase):
 
 @tag('restaurant', 'restaurant_api')
 class RestaurantApiTestCase(AuthenticatedAPITestCase):
-    uri = 'restaurant/'
-    restaurant_name = 'Лапшичная №1'
-    menu_url = 'https://yandex.ru/maps/org/nola_jazz_bar/233512176817/menu/'
-    payload = factories.RestaurantFactory.as_payload(menu_url=menu_url)
-    wrong_ranking = 7.0
-    nonexistent_id = 123
 
     def setUp(self) -> None:
         super().setUp()
+
+        self.uri = 'restaurant/'
+        self.restaurant_name = 'Лапшичная №1'
+        self.menu_url = 'https://yandex.ru/maps/org/nola_jazz_bar/233512176817/menu/'
+        self.payload = factories.RestaurantFactory.as_payload(menu_url=self.menu_url)
+        self.wrong_ranking = 7.0
+        self.nonexistent_id = 123
+
         category = factories.CategoryFactory.create()
         city = factories.CityFactory.create()
         restaurant = factories.RestaurantFactory.create(category=category, city=city)
@@ -149,17 +152,18 @@ class RestaurantApiTestCase(AuthenticatedAPITestCase):
 
 @tag('dish', 'dish_api')
 class DishApiTestCase(AuthenticatedAPITestCase):
-    uri = 'dish/'
-    dish_name = 'Суп'
-    payload = factories.DishFactory.as_payload(name=dish_name)
-    nonexistent_id = 123
 
     def setUp(self) -> None:
         super().setUp()
+
+        self.uri = 'dish/'
+        self.dish_name = 'Суп'
+        self.nonexistent_id = 123
+
         category = factories.CategoryFactory.create()
         city = factories.CityFactory.create()
         restaurant = factories.RestaurantFactory.create(category=category, city=city)
-        self.payload |= {'restaurant': restaurant.id}
+        self.payload = factories.DishFactory.as_payload(name=self.dish_name, restaurant=restaurant)
         tag = factories.TagFactory.create()
         dish = factories.DishFactory.create(restaurant=restaurant)
         dish.tags.add(tag)

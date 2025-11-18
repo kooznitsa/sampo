@@ -57,16 +57,40 @@ class Restaurant(DateTimeMixin):
         return self.name
 
     @property
-    def nearest_stations(self) -> list[tuple['geodata_models.Station', float]] | None:
-        if self.latitude and self.longitude:
-            stations = geodata_models.Station.objects.all()
-            num_of_stations = 5
-            stations_with_distances = [
-                (i, get_haversine_distance(self.latitude, self.longitude, i.latitude, i.longitude))
-                for i in stations
-            ]
-            return sorted(stations_with_distances, key=lambda x: x[1])[:num_of_stations]
-        return None
+    def nearest_stations(self) -> models.QuerySet:
+        return RestaurantStation.objects.filter(restaurant=self).select_related('station').order_by('distance_km')
+
+    def save_nearest_stations(self) -> None:
+        if not (self.latitude and self.longitude):
+            return
+
+        stations = geodata_models.Station.objects.all()
+        stations_with_distances = [
+            (station, get_haversine_distance(self.latitude, self.longitude, station.latitude, station.longitude))
+            for station in stations
+        ]
+
+        num_of_nearest_stations = 5
+        nearest = sorted(stations_with_distances, key=lambda x: x[1])[:num_of_nearest_stations]
+
+        RestaurantStation.objects.filter(restaurant=self).delete()
+
+        for station, distance in nearest:
+            RestaurantStation.objects.create(restaurant=self, station=station, distance_km=distance)
+
+
+class RestaurantStation(models.Model):
+    restaurant = models.ForeignKey('Restaurant', verbose_name='Ресторан', on_delete=models.CASCADE)
+    station = models.ForeignKey('geodata.Station', verbose_name='Станция', on_delete=models.CASCADE)
+    distance_km = models.FloatField(verbose_name='Расстояние в км', default=0.0)
+
+    class Meta:
+        verbose_name = 'Ближайшие станции ресторана'
+        verbose_name_plural = 'Ближайшие станции ресторанов'
+        unique_together = [['restaurant', 'station']]
+
+    def __str__(self) -> str:
+        return f'{self.restaurant} — {self.station} — {self.distance_km}'
 
 
 class Dish(DateTimeMixin):
