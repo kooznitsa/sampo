@@ -25,6 +25,7 @@ help:
 	@echo "  checkmigrations                                   to check migrations"
 	@echo "  collect_links                                     to collect restaurant links"
 	@echo "  coverage                                          to get test coverage report"
+	@echo "  coverage_run                                      to run coverage"
 	@echo "  createsuperuser                                   to create super user"
 	@echo "  dump                                              to create database dump"
 	@echo "  elastic                                           to create and populate the Elasticsearch index and mapping"
@@ -202,6 +203,11 @@ testall:
 .PHONY: testapp
 testapp:
 	$(DOCKER_EXEC) $(MANAGE) test $(APP).tests --tag=$(TAG) --settings=core.settings.test
+
+# Run coverage
+.PHONY: coverage_run
+coverage_run:
+	$(DOCKER_EXEC) poetry run coverage run manage.py test
 
 # Get coverage report
 .PHONY: coverage
