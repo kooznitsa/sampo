@@ -116,3 +116,8 @@ class Dish(DateTimeMixin):
 
     def __str__(self) -> str:
         return self.name
+
+    def create_tags(self, tag_names: set) -> None:
+        for tag_name in tag_names:
+            tag, _ = Tag.objects.get_or_create(name=tag_name)
+            self.tags.add(tag)
