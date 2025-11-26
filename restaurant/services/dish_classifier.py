@@ -1,10 +1,13 @@
 import re
-from typing import Collection
+from typing import Collection, TYPE_CHECKING
 
 from pymorphy3 import MorphAnalyzer
 
 import restaurant.constants as constants
-from restaurant.models import Dish
+
+if TYPE_CHECKING:
+    from restaurant.models import Dish
+    from restaurant.tests.factories import DishFactory
 
 CATEGORIES = {
     'вино': constants.WINE,
@@ -24,7 +27,7 @@ CATEGORIES = {
 
 class DishClassifier:
 
-    def __init__(self, dish: Dish) -> None:
+    def __init__(self, dish: 'Dish | DishFactory') -> None:
         self.dish = dish
         self.morph = MorphAnalyzer()
 

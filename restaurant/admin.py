@@ -14,6 +14,7 @@ from django.utils.safestring import mark_safe, SafeString
 from restaurant.elastic import DishElasticQueryManager
 import restaurant.filters as filters
 import restaurant.models as models
+from restaurant.services import DishClassifier
 import restaurant.tasks as tasks
 
 admin.site.site_header = 'Административная панель Sampo'
@@ -164,6 +165,14 @@ class DishAdmin(admin.ModelAdmin):
         query = DishElasticQueryManager.query_multi_match(search_term)
         queryset = DishElasticQueryManager().perform_search(query, search_term)
         return queryset, False
+
+    def save_related(self, request: HttpRequest, form: ModelForm, formsets: list, change: bool) -> None:
+        super().save_related(request, form, formsets, change)
+        instance = form.instance
+
+        if not instance.tags.exists():
+            tag_names = DishClassifier(instance).classify_dish()
+            instance.create_tags(tag_names)
 
     @admin.display(description='Ресторан')
     def restaurant_link(self, obj: models.Dish) -> Any | SafeString:

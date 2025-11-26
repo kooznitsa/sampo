@@ -10,6 +10,7 @@ from rest_framework.relations import SlugRelatedField
 
 import geodata.models as geodata_models
 import restaurant.models as models
+from restaurant.services import DishClassifier
 
 info_logger = logging.getLogger('info_logger')
 
@@ -117,6 +118,7 @@ class DishSerializer(serializers.ModelSerializer):
         rep['tags'] = TagSerializer(instance.tags.all(), many=True, context=self.context).data
         return rep
 
+    @transaction.atomic
     def create(self, validated_data: dict) -> models.Dish:
         tags = validated_data.pop('tags', [])
 
@@ -130,6 +132,9 @@ class DishSerializer(serializers.ModelSerializer):
 
         if tags:
             dish.tags.set(tags)
+        else:
+            tag_names = DishClassifier(dish).classify_dish()
+            dish.create_tags(tag_names)
 
         return dish
 

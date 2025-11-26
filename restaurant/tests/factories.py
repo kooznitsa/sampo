@@ -4,6 +4,7 @@ import factory
 from factory import fuzzy
 
 from restaurant.enums import WeightEnum
+from restaurant.services import DishClassifier
 
 
 class CategoryFactory(factory.django.DjangoModelFactory):
@@ -90,7 +91,10 @@ class DishFactory(factory.django.DjangoModelFactory):
             for tag in extracted:
                 self.tags.add(tag)
         else:
-            self.tags.add(TagFactory())
+            tag_names = DishClassifier(self).classify_dish()
+            for tag_name in tag_names:
+                tag = TagFactory.create(name=tag_name)
+                self.tags.add(tag)
 
     @classmethod
     def as_payload(cls, **kwargs: Any) -> dict[str, Any]:
