@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Dish classifier service ([#31](https://github.com/kooznitsa/sampo/pull/31)).
 - Dish tags generation on save ([#32](https://github.com/kooznitsa/sampo/pull/32)).
 - Dish tags generation commands ([#33](https://github.com/kooznitsa/sampo/pull/33)).
+- Admin methods to create restaurant nearest stations ([#34](https://github.com/kooznitsa/sampo/pull/34)).
 
 ### Fixed
 
