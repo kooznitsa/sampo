@@ -108,6 +108,29 @@ class TestDishStationsFilters(TestCase):
                 self.assertEqual(filterset.qs.count(), expected)
 
 
+@tag('filters', 'dish_filters', 'dish_tags_filter')
+class TestDishTagsFilters(TestCase):
+
+    def setUp(self) -> None:
+        dish_names = ('буйабес', 'гаспачо', 'шницель', 'лавандовый раф')
+        restaurant = factories.RestaurantFactory.create(category=factories.CategoryFactory.create(), city=factories.CityFactory.create())
+        self.dishes = [factories.DishFactory.create(restaurant=restaurant, name=dish_name) for dish_name in dish_names]
+
+    def test_filter_by_tag(self) -> None:
+        cases = (('суп', 2), ('мясо', 1), ('кофе', 1))
+        for tag_name, expected in cases:
+            with self.subTest(tag_name=tag_name, expected=expected):
+                filterset = DishFilterSet({'tags': [models.Tag.objects.get(name=tag_name).id]}, queryset=models.Dish.objects.all())
+
+                self.assertEqual(filterset.qs.count(), expected)
+
+    def test_filter_by_multiple_tags(self) -> None:
+        tags = [models.Tag.objects.get(name='мясо').id, models.Tag.objects.get(name='кофе').id]
+        filterset = DishFilterSet({'tags': tags}, queryset=models.Dish.objects.all())
+
+        self.assertEqual(filterset.qs.count(), 2)
+
+
 @tag('filters', 'restaurant_filters')
 class TestRestaurantFilters(TestCase):
 
