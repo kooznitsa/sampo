@@ -149,6 +149,21 @@ class RestaurantApiTestCase(AuthenticatedAPITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
+    def get_options_for_filter_by_category(self) -> None:
+        response = self.client.get(f'{BASE_URL}{self.uri}filter/by/category/')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def get_options_for_filter_by_num_of_reviews(self) -> None:
+        response = self.client.get(f'{BASE_URL}{self.uri}filter/by/num_of_reviews/')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def get_options_for_filter_by_ranking(self) -> None:
+        response = self.client.get(f'{BASE_URL}{self.uri}filter/by/ranking/')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
 
 @tag('dish', 'dish_api')
 class DishApiTestCase(AuthenticatedAPITestCase):
@@ -267,3 +282,18 @@ class DishApiTestCase(AuthenticatedAPITestCase):
         response = self.client.delete(f'{BASE_URL}{self.uri}{self.nonexistent_id}/')
 
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def get_options_for_filter_by_price(self) -> None:
+        response = self.client.get(f'{BASE_URL}{self.uri}filter/by/price/')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def get_options_for_filter_by_station(self) -> None:
+        response = self.client.get(f'{BASE_URL}{self.uri}filter/by/station/')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def get_options_for_filter_by_tag(self) -> None:
+        response = self.client.get(f'{BASE_URL}{self.uri}filter/by/tag/')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
