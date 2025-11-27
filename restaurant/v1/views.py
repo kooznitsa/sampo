@@ -158,3 +158,10 @@ class DishViewSet(viewsets.ModelViewSet):
             name='station', text='Станция метро', choices=filters.get_station_options(order_by='name'),
         )
         return Response({'options': options})
+
+    @action(detail=False, methods=['get'], url_path='filter/by_tag')
+    def filter_by_tag(self, *args: Any, **kwargs: Any) -> Response:
+        options = filters.get_filter_options(
+            name='tags', text='Тег', choices=filters.get_tag_options(), field_type='multiselect',
+        )
+        return Response({'options': options})
