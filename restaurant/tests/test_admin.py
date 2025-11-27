@@ -70,21 +70,29 @@ class TestDishActionsAdmin(TestCase):
     def setUp(self) -> None:
         self.user = UserFactory.create()
         self.client.login(username=self.user.username, password=DEFAULT_PASSWORD)
-        self.content = factories.DishFactory.create()
+        self.dish = factories.DishFactory.create(name='буйабес')
 
     def test_delete_action(self) -> None:
-        data = {'action': 'delete', '_selected_action': [self.content.id]}
+        data = {'action': 'delete', '_selected_action': [self.dish.id]}
         change_url = reverse('admin:restaurant_dish_changelist')
         response = self.client.post(change_url, data, follow=True)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_export_csv_action(self) -> None:
-        data = {'action': 'export_csv', '_selected_action': [self.content.id]}
+        data = {'action': 'export_csv', '_selected_action': [self.dish.id]}
         change_url = reverse('admin:restaurant_dish_changelist')
         response = self.client.post(change_url, data, follow=True)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_create_tags_action(self) -> None:
+        data = {'action': 'create_tags', '_selected_action': [self.dish.id]}
+        change_url = reverse('admin:restaurant_dish_changelist')
+        response = self.client.post(change_url, data, follow=True)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertTrue('суп' in self.dish.tags.values_list('name', flat=True))
 
 
 @tag('admin', 'dish_admin', 'dish_admin_filters')
