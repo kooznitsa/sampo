@@ -23,6 +23,10 @@ def get_station_options(order_by: str = 'id') -> list[tuple[int, str]]:
     return [(station.id, station.name) for station in Station.objects.order_by(order_by)]
 
 
+def get_tag_options() -> list[tuple[int, str]]:
+    return [(tag.id, tag.name) for tag in models.Tag.objects.all()]
+
+
 def get_filter_options(name: str, text: str, choices: list[tuple], field_type: str = 'select') -> list[dict]:
     return [{
         'name': name,
