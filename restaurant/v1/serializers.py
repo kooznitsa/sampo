@@ -69,6 +69,8 @@ class RestaurantSerializer(serializers.ModelSerializer):
             'menu_url': validated_data.get('menu_url'),
         }
         restaurant, created = models.Restaurant.objects.update_or_create(defaults=validated_data, **lookup)
+        if created:
+            restaurant.save_nearest_stations()
         return restaurant
 
     @transaction.atomic

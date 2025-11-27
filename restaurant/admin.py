@@ -60,7 +60,7 @@ class RestaurantForm(ModelForm):
 
 @admin.register(models.Restaurant)
 class RestaurantAdmin(admin.ModelAdmin):
-    actions = ('update_restaurant', 'update_menu', 'export_csv')
+    actions = ('update_restaurant', 'update_menu', 'export_csv', 'create_stations')
     actions_on_bottom = True
     change_list_template = 'change_list.html'
     date_hierarchy = 'updated_at'
@@ -87,6 +87,10 @@ class RestaurantAdmin(admin.ModelAdmin):
                 )
             ).distinct()
         return queryset
+
+    def save_related(self, request: HttpRequest, form: ModelForm, formsets: list, change: bool) -> None:
+        super().save_related(request, form, formsets, change)
+        form.instance.save_nearest_stations()
 
     @admin.display(description='Есть блюда', ordering='has_dishes', boolean=True)
     def has_dishes(self, obj: models.Restaurant) -> bool:
@@ -132,7 +136,7 @@ class RestaurantAdmin(admin.ModelAdmin):
             messages.SUCCESS,
         )
 
-    @admin.action(description='Экспортировать в CSV')
+    @admin.action(description='Экспортировать в CSV выбранные Рестораны')
     def export_csv(self, request: HttpRequest, queryset: QuerySet) -> HttpResponse:
         response = HttpResponse(content_type='text/csv')
         response['Content-Disposition'] = f'attachment; filename=restaurants_{datetime.today()}.csv'
@@ -141,6 +145,19 @@ class RestaurantAdmin(admin.ModelAdmin):
         for i in queryset.select_related('category', 'city'):
             writer.writerow([i.id, i.name, i.category.name, i.city.name, i.address, i.menu_url, i.ranking, i.menu_update_date])
         return response
+
+    @admin.action(description='Добавить ближайшие станции для выбранных Ресторанов')
+    def create_stations(self, request: HttpRequest, queryset: QuerySet) -> None:
+        successful_ids = []
+        for restaurant in queryset:
+            successful_ids.append(str(restaurant.id))
+            restaurant.save_nearest_stations()
+
+        self.message_user(
+            request,
+            f'Добавлены ближайшие станции для ресторанов с ID: {", ".join(successful_ids)}',
+            messages.SUCCESS,
+        )
 
 
 @admin.register(models.Dish)
@@ -179,7 +196,7 @@ class DishAdmin(admin.ModelAdmin):
         url = reverse('admin:restaurant_restaurant_change', args=[obj.restaurant.id])
         return format_html(f'<a href="{url}">{obj.restaurant}</a>')
 
-    @admin.action(description='Создать теги')
+    @admin.action(description='Создать теги для выбранных Блюд')
     def create_tags(self, request: HttpRequest, queryset: QuerySet) -> None:
         dish_ids = []
         for dish in queryset:
@@ -193,7 +210,7 @@ class DishAdmin(admin.ModelAdmin):
             messages.SUCCESS,
         )
 
-    @admin.action(description='Экспортировать в CSV')
+    @admin.action(description='Экспортировать в CSV выбранные Блюда')
     def export_csv(self, request: HttpRequest, queryset: QuerySet) -> HttpResponse:
         response = HttpResponse(content_type='text/csv')
         response['Content-Disposition'] = f'attachment; filename=dishes_{datetime.today()}.csv'
