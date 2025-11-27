@@ -26,6 +26,7 @@ help:
 	@echo "  collect_links                                     to collect restaurant links"
 	@echo "  coverage                                          to get test coverage report"
 	@echo "  coverage_run                                      to run coverage"
+	@echo "  create_tags                                       to create dish tags"
 	@echo "  createsuperuser                                   to create super user"
 	@echo "  dump                                              to create database dump"
 	@echo "  elastic                                           to create and populate the Elasticsearch index and mapping"
@@ -221,6 +222,11 @@ coverage:
 .PHONY: collect_links
 collect_links:
 	$(DOCKER_EXEC) $(MANAGE) collect_links
+
+# Create dish tags
+.PHONY: create_tags
+create_tags:
+	$(DOCKER_EXEC) $(MANAGE) create_tags
 
 # Scrape restaurant menu
 .PHONY: scrape_menu

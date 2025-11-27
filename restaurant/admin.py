@@ -145,11 +145,11 @@ class RestaurantAdmin(admin.ModelAdmin):
 
 @admin.register(models.Dish)
 class DishAdmin(admin.ModelAdmin):
-    actions = ('export_csv',)
+    actions = ('create_tags', 'export_csv')
     actions_on_bottom = True
     autocomplete_fields = ('restaurant',)
     list_display = ('id', 'name', 'price', 'restaurant_link', 'weight', 'weight_unit', 'quantity')
-    list_filter = (filters.DishAvailableFilter, filters.DishPriceFilter, filters.DishStationFilter)
+    list_filter = (filters.DishAvailableFilter, filters.DishPriceFilter, filters.DishStationFilter, 'tags')
     list_select_related = ('restaurant',)
     search_fields = ('name', 'restaurant__pk')
     search_help_text = 'Поиск по полям «Название блюда» и «ID ресторана»'
@@ -178,6 +178,20 @@ class DishAdmin(admin.ModelAdmin):
     def restaurant_link(self, obj: models.Dish) -> Any | SafeString:
         url = reverse('admin:restaurant_restaurant_change', args=[obj.restaurant.id])
         return format_html(f'<a href="{url}">{obj.restaurant}</a>')
+
+    @admin.action(description='Создать теги')
+    def create_tags(self, request: HttpRequest, queryset: QuerySet) -> None:
+        dish_ids = []
+        for dish in queryset:
+            tag_names = DishClassifier(dish).classify_dish()
+            dish.create_tags(tag_names)
+            dish_ids.append(str(dish.id))
+
+        self.message_user(
+            request,
+            f'Теги созданы для блюд с ID: {", ".join(dish_ids)}',
+            messages.SUCCESS,
+        )
 
     @admin.action(description='Экспортировать в CSV')
     def export_csv(self, request: HttpRequest, queryset: QuerySet) -> HttpResponse:
