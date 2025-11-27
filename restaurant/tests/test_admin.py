@@ -135,31 +135,40 @@ class TestRestaurantActionsAdmin(TestCase):
     def setUp(self) -> None:
         self.user = UserFactory.create()
         self.client.login(username=self.user.username, password=DEFAULT_PASSWORD)
-        self.content = factories.RestaurantFactory.create()
+        self.restaurant = factories.RestaurantFactory.create()
 
     def test_delete_action(self) -> None:
-        data = {'action': 'delete', '_selected_action': [self.content.id]}
+        data = {'action': 'delete_selected', '_selected_action': [self.restaurant.id], 'post': 'yes'}
         change_url = reverse('admin:restaurant_restaurant_changelist')
         response = self.client.post(change_url, data, follow=True)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertFalse(models.Restaurant.objects.filter(pk=self.restaurant.id).exists())
 
     def test_export_csv_action(self) -> None:
-        data = {'action': 'export_csv', '_selected_action': [self.content.id]}
+        data = {'action': 'export_csv', '_selected_action': [self.restaurant.id]}
         change_url = reverse('admin:restaurant_restaurant_changelist')
         response = self.client.post(change_url, data, follow=True)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_update_restaurant_action(self) -> None:
-        data = {'action': 'update_restaurant', '_selected_action': [self.content.id]}
+        data = {'action': 'update_restaurant', '_selected_action': [self.restaurant.id]}
         change_url = reverse('admin:restaurant_restaurant_changelist')
         response = self.client.post(change_url, data, follow=True)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_update_menu_action(self) -> None:
-        data = {'action': 'update_menu', '_selected_action': [self.content.id]}
+        data = {'action': 'update_menu', '_selected_action': [self.restaurant.id]}
+        change_url = reverse('admin:restaurant_restaurant_changelist')
+        response = self.client.post(change_url, data, follow=True)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    @tag('new')
+    def test_create_stations_action(self) -> None:
+        data = {'action': 'create_stations', '_selected_action': [self.restaurant.id], 'post': 'yes'}
         change_url = reverse('admin:restaurant_restaurant_changelist')
         response = self.client.post(change_url, data, follow=True)
 
