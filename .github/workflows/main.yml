@@ -48,6 +48,10 @@ jobs:
       - name: Run mypy
         run: make mypyapp-ci APP=restaurant
 
+      - name: Stop containers if exist
+        run: |
+          docker compose -f ./deploy/compose.base.yml down --remove-orphans || true
+
       - name: Run tests
         env:
           ENV: local
