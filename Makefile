@@ -1,4 +1,5 @@
-include ./env/.env.local
+ENV ?= local
+include ./env/.env.$(ENV)
 
 DOCKER_COMPOSE := docker compose -p $(APP_NAME) -f ./deploy/compose.yml --env-file ./env/.env.$(ENV) --profile
 DOCKER_EXEC := docker exec $(APP_NAME)_backend
@@ -20,7 +21,7 @@ WITHOUT_COORDS_ONLY ?= 1
 # Print all commands
 .PHONY: help
 help:
-	@echo "Please use \`make <target>' where <target> is one of"
+	@echo "Please use \`make <target>' (make -f Makefile.prod <target> for prod env) where <target> is one of"
 	@echo "  build                                             to build Docker containers"
 	@echo "  checkmigrations                                   to check migrations"
 	@echo "  collect_links                                     to collect restaurant links"
