@@ -1,2 +1,0 @@
-ENV=prod
-include ./Makefile

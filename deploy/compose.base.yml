@@ -18,14 +18,13 @@ services:
     env_file:
       - ../env/.env.${ENV}
     command: >
-      /bin/bash -c "poetry install --no-root --no-interaction
-      && poetry run python manage.py migrate --noinput
-      && poetry run python manage.py collectstatic --noinput
-      && poetry run gunicorn core.wsgi --reload --bind=0.0.0.0:8000 --workers=1 --log-level=$${LOG_LEVEL}"
+      /bin/bash -c "
+      poetry run python manage.py migrate --noinput &&
+      poetry run python manage.py collectstatic --noinput &&
+      poetry run gunicorn core.wsgi --reload --bind=0.0.0.0:8000 --workers=1 --log-level=$${LOG_LEVEL}"
     ports:
       - '8888:8000'
     volumes:
-      - ../:/home/app
       - static-volume:/home/app/staticfiles
     profiles: [main, secondary, test]
 
