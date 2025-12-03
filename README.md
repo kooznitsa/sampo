@@ -13,36 +13,50 @@
 
 ## Переменные окружения
 
-ENV = local | test | dev | staging | prod
+ENV = local | test | prod
 
 - Переменные окружения: /env/.env.$(ENV)
 - Специфичные для окружения настройки: /core/settings/$(ENV).py
-- Makefile: include ./env/.env.$(ENV)
-
-Для прода заменить dev в compose.yml на prod:
-
-```yml
-services:
-  backend:
-    <<: *app-main
-    build:
-      context: ../
-      target: dev
-```
+- Makefile.$(ENV): ```ENV=<env>```, ```include Makefile```
 
 ## Команды
 
 ### Запуск проекта
 
+Для ENV=local:
+
 ```bash
+# Клонировать проект
 git clone https://github.com/kooznitsa/sampo.git
+
+# Создать файлы окружения
 cd sampo
 cp env/.env.local.example env/.env.local
 cp env/.env.test.example env/.env.test
+
+# Запустить контейнеры Docker
 make build
 
-make migrate
+# Создать индексы Elasticsearch
 make elastic
+```
+
+Для ENV=prod:
+
+```bash
+# Клонировать проект
+git clone https://github.com/kooznitsa/sampo.git
+
+# Создать файлы окружения
+cd sampo
+cp env/.env.local.example env/.env.prod
+cp env/.env.test.example env/.env.test
+
+# Запустить контейнеры Docker
+make -f Makefile.prod build
+
+# Создать индексы Elasticsearch
+make -f Makefile.prod elastic
 ```
 
 ### Установка зависимостей локально (если необходимо)
