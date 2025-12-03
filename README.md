@@ -17,7 +17,6 @@ ENV = local | test | prod
 
 - Переменные окружения: /env/.env.$(ENV)
 - Специфичные для окружения настройки: /core/settings/$(ENV).py
-- Makefile.$(ENV): ```ENV=<env>```, ```include Makefile```
 
 ## Команды
 
@@ -53,10 +52,10 @@ cp env/.env.local.example env/.env.prod
 cp env/.env.test.example env/.env.test
 
 # Запустить контейнеры Docker
-make -f Makefile.prod build
+make build ENV=prod
 
 # Создать индексы Elasticsearch
-make -f Makefile.prod elastic
+make elastic ENV=prod
 ```
 
 ### Установка зависимостей локально (если необходимо)
