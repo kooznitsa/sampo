@@ -1,0 +1,5 @@
+services:
+  backend:
+    volumes:
+      - ../:/home/app
+      - static-volume:/home/app/staticfiles

@@ -1,0 +1,12 @@
+from .beer import BEER  # noqa
+from .coffee import COFFEE  # noqa
+from .fish import FISH  # noqa
+from .georgian import GEORGIAN  # noqa
+from .italian import ITALIAN  # noqa
+from .japanese import JAPANESE  # noqa
+from .meat import MEAT  # noqa
+from .pizza import PIZZA  # noqa
+from .russian import RUSSIAN  # noqa
+from .seafood import SEAFOOD  # noqa
+from .soup import SOUP  # noqa
+from .wine import WINE  # noqa

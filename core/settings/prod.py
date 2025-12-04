@@ -3,7 +3,7 @@ import environ
 
 from .base import *  # noqa
 
-load_dotenv(BASE_DIR / 'env' / '.env.local')  # noqa
+load_dotenv(BASE_DIR / 'env' / '.env.prod')  # noqa
 env = environ.Env()
 
 ENV = env.str('ENV')
@@ -27,3 +27,17 @@ DATABASES = {
         },
     }
 }
+
+
+# SECURITY
+
+CSRF_COOKIE_SECURE = True
+SESSION_COOKIE_SECURE = True
+SECURE_SSL_REDIRECT = True
+
+
+# EMAILS
+
+ADMIN_EMAILS = [('', email) for email in env.str('ADMINS').split(',')]
+ADMINS = ADMIN_EMAILS
+MANAGERS = ADMIN_EMAILS

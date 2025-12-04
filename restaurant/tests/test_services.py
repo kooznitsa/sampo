@@ -211,7 +211,7 @@ class TestParsers(TestCase):
                 self.assertEqual(price, expected)
 
 
-@tag('services', 'scrapers', 'restaurant_scraper')
+@tag('services', 'restaurant_services', 'scrapers', 'restaurant_scraper')
 class TestRestaurantScraper(unittest.TestCase):
 
     def setUp(self) -> None:
@@ -430,7 +430,7 @@ class TestRestaurantScraper(unittest.TestCase):
         self.assertEqual(updated_restaurant.is_active, False)
 
 
-@tag('services', 'scrapers', 'menu_scraper')
+@tag('services', 'restaurant_services', 'scrapers', 'menu_scraper')
 class TestMenuScraper(unittest.TestCase):
 
     def setUp(self) -> None:
@@ -595,7 +595,7 @@ class TestMenuScraper(unittest.TestCase):
         mock_logger.info.assert_called_once()
 
 
-@tag('services', 'scrapers', 'link_collector')
+@tag('services', 'restaurant_services', 'scrapers', 'link_collector')
 class TestLinkCollector(unittest.TestCase):
 
     def setUp(self) -> None:
@@ -637,7 +637,7 @@ class TestLinkCollector(unittest.TestCase):
         mock_write_db.assert_called_once_with(mock_parse.return_value, 'Ресторан')
 
 
-@tag('services', 'elasticsearch', 'elasticsearch_dish')
+@tag('services', 'dish_services', 'elasticsearch', 'elasticsearch_dish')
 class TestElasticsearchDish(TestCase):
 
     def setUp(self) -> None:
@@ -690,3 +690,26 @@ class TestElasticsearchDish(TestCase):
         self.assertEqual(queryset.count(), num_of_returned_objects)
         mock_query_multi.assert_called_once_with(self.search_text)
         mock_perform_search.assert_called_once()
+
+
+@tag('services', 'dish_services', 'dish_classifier')
+class TestDishClassifier(TestCase):
+
+    def setUp(self) -> None:
+        restaurant = factories.RestaurantFactory.create()
+        soup_restaurant = factories.RestaurantFactory.create()
+        soup_names = ('буйабес', 'Куриные супы', 'Суп Чихиртма', 'Уха по-царски')
+        self.soup_dishes = [factories.DishFactory.create(restaurant=soup_restaurant, name=name) for name in soup_names]
+        self.batch_size = 5
+        self.other_dishes = factories.DishFactory.create_batch(
+            size=self.batch_size, restaurant=restaurant, name='SomeRandomName', comment='комментарий',
+        )
+
+    def test_classify_dishes(self) -> None:
+        for queryset, expected in ((self.soup_dishes, True), (self.other_dishes, False)):
+            with self.subTest(queryset=queryset, expected=expected):
+                for dish in queryset:
+                    classifier = services.DishClassifier(dish)
+                    tags = classifier.classify_dish()
+
+                    self.assertEqual('суп' in tags, expected)

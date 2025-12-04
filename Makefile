@@ -1,6 +1,12 @@
-include ./env/.env.local
+ENV ?= local
+include ./env/.env.$(ENV)
 
-DOCKER_COMPOSE := docker compose -p $(APP_NAME) -f ./deploy/compose.yml --env-file ./env/.env.$(ENV) --profile
+DOCKER_COMPOSE := docker compose -p $(APP_NAME) \
+	-f ./deploy/compose.base.yml \
+	-f ./deploy/compose.$(ENV).yml \
+	--env-file ./env/.env.$(ENV) \
+	--profile
+
 DOCKER_EXEC := docker exec $(APP_NAME)_backend
 MANAGE = poetry run python manage.py
 
@@ -20,12 +26,13 @@ WITHOUT_COORDS_ONLY ?= 1
 # Print all commands
 .PHONY: help
 help:
-	@echo "Please use \`make <target>' where <target> is one of"
+	@echo "Please use \`make <target>' (for prod: \`make <target> ENV=prod\`) where <target> is one of"
 	@echo "  build                                             to build Docker containers"
 	@echo "  checkmigrations                                   to check migrations"
 	@echo "  collect_links                                     to collect restaurant links"
 	@echo "  coverage                                          to get test coverage report"
 	@echo "  coverage_run                                      to run coverage"
+	@echo "  create_tags                                       to create dish tags"
 	@echo "  createsuperuser                                   to create super user"
 	@echo "  dump                                              to create database dump"
 	@echo "  elastic                                           to create and populate the Elasticsearch index and mapping"
@@ -172,11 +179,17 @@ elastic:
 # Run linter
 .PHONY: linter
 linter:
+	@if [ "$(ENV)" = "prod" ]; then \
+		echo "❌ linter disabled in prod"; exit 1; \
+	fi
 	$(DOCKER_EXEC) poetry run flake8 ./ --ignore="E121,E122,E126,E201,E226,E266,E402,E501,Q000" --exclude=".venv"
 
 # Check typing
 .PHONY: mypy
 mypy:
+	@if [ "$(ENV)" = "prod" ]; then \
+		echo "❌ mypy disabled in prod"; exit 1; \
+	fi
 	$(DOCKER_EXEC) poetry run mypy .
 
 # Check app typing in CI
@@ -221,6 +234,11 @@ coverage:
 .PHONY: collect_links
 collect_links:
 	$(DOCKER_EXEC) $(MANAGE) collect_links
+
+# Create dish tags
+.PHONY: create_tags
+create_tags:
+	$(DOCKER_EXEC) $(MANAGE) create_tags
 
 # Scrape restaurant menu
 .PHONY: scrape_menu

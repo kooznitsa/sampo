@@ -14,6 +14,7 @@ from django.utils.safestring import mark_safe, SafeString
 from restaurant.elastic import DishElasticQueryManager
 import restaurant.filters as filters
 import restaurant.models as models
+from restaurant.services import DishClassifier
 import restaurant.tasks as tasks
 
 admin.site.site_header = 'Административная панель Sampo'
@@ -59,7 +60,7 @@ class RestaurantForm(ModelForm):
 
 @admin.register(models.Restaurant)
 class RestaurantAdmin(admin.ModelAdmin):
-    actions = ('update_restaurant', 'update_menu', 'export_csv')
+    actions = ('update_restaurant', 'update_menu', 'export_csv', 'create_stations')
     actions_on_bottom = True
     change_list_template = 'change_list.html'
     date_hierarchy = 'updated_at'
@@ -86,6 +87,10 @@ class RestaurantAdmin(admin.ModelAdmin):
                 )
             ).distinct()
         return queryset
+
+    def save_related(self, request: HttpRequest, form: ModelForm, formsets: list, change: bool) -> None:
+        super().save_related(request, form, formsets, change)
+        form.instance.save_nearest_stations()
 
     @admin.display(description='Есть блюда', ordering='has_dishes', boolean=True)
     def has_dishes(self, obj: models.Restaurant) -> bool:
@@ -131,7 +136,7 @@ class RestaurantAdmin(admin.ModelAdmin):
             messages.SUCCESS,
         )
 
-    @admin.action(description='Экспортировать в CSV')
+    @admin.action(description='Экспортировать в CSV выбранные Рестораны')
     def export_csv(self, request: HttpRequest, queryset: QuerySet) -> HttpResponse:
         response = HttpResponse(content_type='text/csv')
         response['Content-Disposition'] = f'attachment; filename=restaurants_{datetime.today()}.csv'
@@ -141,14 +146,27 @@ class RestaurantAdmin(admin.ModelAdmin):
             writer.writerow([i.id, i.name, i.category.name, i.city.name, i.address, i.menu_url, i.ranking, i.menu_update_date])
         return response
 
+    @admin.action(description='Добавить ближайшие станции для выбранных Ресторанов')
+    def create_stations(self, request: HttpRequest, queryset: QuerySet) -> None:
+        successful_ids = []
+        for restaurant in queryset:
+            successful_ids.append(str(restaurant.id))
+            restaurant.save_nearest_stations()
+
+        self.message_user(
+            request,
+            f'Добавлены ближайшие станции для ресторанов с ID: {", ".join(successful_ids)}',
+            messages.SUCCESS,
+        )
+
 
 @admin.register(models.Dish)
 class DishAdmin(admin.ModelAdmin):
-    actions = ('export_csv',)
+    actions = ('create_tags', 'export_csv')
     actions_on_bottom = True
     autocomplete_fields = ('restaurant',)
     list_display = ('id', 'name', 'price', 'restaurant_link', 'weight', 'weight_unit', 'quantity')
-    list_filter = (filters.DishAvailableFilter, filters.DishPriceFilter, filters.DishStationFilter)
+    list_filter = (filters.DishAvailableFilter, filters.DishPriceFilter, filters.DishStationFilter, 'tags')
     list_select_related = ('restaurant',)
     search_fields = ('name', 'restaurant__pk')
     search_help_text = 'Поиск по полям «Название блюда» и «ID ресторана»'
@@ -165,12 +183,34 @@ class DishAdmin(admin.ModelAdmin):
         queryset = DishElasticQueryManager().perform_search(query, search_term)
         return queryset, False
 
+    def save_related(self, request: HttpRequest, form: ModelForm, formsets: list, change: bool) -> None:
+        super().save_related(request, form, formsets, change)
+        instance = form.instance
+
+        if not instance.tags.exists():
+            tag_names = DishClassifier(instance).classify_dish()
+            instance.create_tags(tag_names)
+
     @admin.display(description='Ресторан')
     def restaurant_link(self, obj: models.Dish) -> Any | SafeString:
         url = reverse('admin:restaurant_restaurant_change', args=[obj.restaurant.id])
         return format_html(f'<a href="{url}">{obj.restaurant}</a>')
 
-    @admin.action(description='Экспортировать в CSV')
+    @admin.action(description='Создать теги для выбранных Блюд')
+    def create_tags(self, request: HttpRequest, queryset: QuerySet) -> None:
+        dish_ids = []
+        for dish in queryset:
+            tag_names = DishClassifier(dish).classify_dish()
+            dish.create_tags(tag_names)
+            dish_ids.append(str(dish.id))
+
+        self.message_user(
+            request,
+            f'Теги созданы для блюд с ID: {", ".join(dish_ids)}',
+            messages.SUCCESS,
+        )
+
+    @admin.action(description='Экспортировать в CSV выбранные Блюда')
     def export_csv(self, request: HttpRequest, queryset: QuerySet) -> HttpResponse:
         response = HttpResponse(content_type='text/csv')
         response['Content-Disposition'] = f'attachment; filename=dishes_{datetime.today()}.csv'

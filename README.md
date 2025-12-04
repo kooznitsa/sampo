@@ -13,36 +13,49 @@
 
 ## Переменные окружения
 
-ENV = local | test | dev | staging | prod
+ENV = local | test | prod
 
 - Переменные окружения: /env/.env.$(ENV)
 - Специфичные для окружения настройки: /core/settings/$(ENV).py
-- Makefile: include ./env/.env.$(ENV)
-
-Для прода заменить dev в compose.yml на prod:
-
-```yml
-services:
-  backend:
-    <<: *app-main
-    build:
-      context: ../
-      target: dev
-```
 
 ## Команды
 
 ### Запуск проекта
 
+Для ENV=local:
+
 ```bash
+# Клонировать проект
 git clone https://github.com/kooznitsa/sampo.git
+
+# Создать файлы окружения
 cd sampo
 cp env/.env.local.example env/.env.local
 cp env/.env.test.example env/.env.test
+
+# Запустить контейнеры Docker
 make build
 
-make migrate
+# Создать индексы Elasticsearch
 make elastic
+```
+
+Для ENV=prod:
+
+```bash
+# Клонировать проект
+git clone https://github.com/kooznitsa/sampo.git
+
+# Создать файлы окружения
+cd sampo
+cp env/.env.local.example env/.env.prod
+cp env/.env.test.example env/.env.test
+
+# Запустить контейнеры Docker
+make build ENV=prod
+
+# Создать индексы Elasticsearch
+make elastic ENV=prod
 ```
 
 ### Установка зависимостей локально (если необходимо)
@@ -70,3 +83,7 @@ git merge main
 ## Структура базы данных (основные таблицы)
 
 ![Диаграмма базы данных](./db_diagram.png)
+
+## API
+
+Документация: /api/v1/swagger/

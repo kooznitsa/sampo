@@ -45,22 +45,14 @@ class DishModelTestCase(TestCase):
 
     def setUp(self) -> None:
         restaurant = factories.RestaurantFactory.create()
-        dish = factories.DishFactory.create(restaurant=restaurant)
-        tags = factories.TagFactory.create_batch(3)
-        dish.tags.add(*tags)
+        dish_names = ('Буйабес', 'колбаса', 'суши', 'Лавандовый раф')
+        self.dishes = [factories.DishFactory.create(restaurant=restaurant, name=name) for name in dish_names]
 
     def test_get_dish(self) -> None:
         dish = models.Dish.objects.first()
         restaurant = models.Restaurant.objects.first()
 
         self.assertEqual(dish.restaurant, restaurant)
-
-    def test_get_dish_tags(self) -> None:
-        tags = models.Tag.objects.all()
-        dish = models.Dish.objects.first()
-
-        self.assertEqual(tags.count(), dish.tags.count())
-        self.assertEqual(set(tags), set(dish.tags.all()))
 
     def test_get_available_dish(self) -> None:
         dish = models.Dish.objects.first()
@@ -83,3 +75,14 @@ class DishModelTestCase(TestCase):
 
         available_dish = models.Dish.objects.available().filter(pk=dish.pk)
         self.assertFalse(available_dish.exists())
+
+    def test_tags_created(self) -> None:
+        cases = (
+            (models.Dish.objects.get(name='Буйабес'), {'суп'}),
+            (models.Dish.objects.get(name='колбаса'), {'мясо'}),
+            (models.Dish.objects.get(name='суши'), {'рыба', 'японская кухня', 'морепродукты'}),
+            (models.Dish.objects.get(name='Лавандовый раф'), {'кофе'}),
+        )
+        for dish, tags in cases:
+            with self.subTest(dish=dish, tags=tags):
+                self.assertEqual(set(t.name for t in dish.tags.all()), tags)

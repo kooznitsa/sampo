@@ -23,40 +23,40 @@ def get_station_options(order_by: str = 'id') -> list[tuple[int, str]]:
     return [(station.id, station.name) for station in Station.objects.order_by(order_by)]
 
 
+def get_tag_options() -> list[tuple[int, str]]:
+    return [(tag.id, tag.name) for tag in models.Tag.objects.all()]
+
+
 def get_filter_options(name: str, text: str, choices: list[tuple], field_type: str = 'select') -> list[dict]:
-    return [
-        {
-            'name': name,
-            'text': text,
-            'field_type': field_type,
-            'options': [{'value': name, 'name': value} for name, value in choices]
-        },
-    ]
+    return [{
+        'name': name,
+        'text': text,
+        'field_type': field_type,
+        'options': [{'value': name, 'name': value} for name, value in choices]
+    }]
 
 
 class DishFilterSet(django_filters.FilterSet):
-    restaurant = django_filters.NumberFilter(method='filter_restaurant', label='Restaurant ID.')
     available_only = django_filters.NumberFilter(
         method='filter_available_only',
         label='Available only',
         help_text='0 = all dishes, 1 = only available.',
     )
     price = django_filters.ChoiceFilter(method='filter_price', label='Price (RUB).', choices=enums.PriceEnum.choices)
+    restaurant = django_filters.NumberFilter(method='filter_restaurant', label='Restaurant ID.')
     station = django_filters.ChoiceFilter(
         method='filter_station',
         label='Station.',
         choices=get_station_options,
         help_text='Filter dishes that have restaurants located <= 2.5 km from given station.',
     )
+    tags = django_filters.ModelMultipleChoiceFilter(
+        field_name='tags', label='Tag ID.', queryset=models.Tag.objects.all(), to_field_name='id',
+    )
 
     class Meta:
         model = models.Dish
         fields = ['restaurant', 'available_only']
-
-    def filter_restaurant(self, queryset: QuerySet, name: str, value: int) -> QuerySet | NoReturn:
-        if not models.Restaurant.objects.filter(pk=value).exists():
-            raise NotFound(detail=f'Restaurant with id={value} was not found')
-        return queryset.filter(restaurant_id=value)
 
     def filter_available_only(self, queryset: QuerySet, name: str, value: str | int | bool) -> QuerySet:
         if value in [1, '1', True, 'true']:
@@ -74,6 +74,11 @@ class DishFilterSet(django_filters.FilterSet):
             queryset = queryset.filter(price__gte=value_split[0])
         return queryset
 
+    def filter_restaurant(self, queryset: QuerySet, name: str, value: int) -> QuerySet | NoReturn:
+        if not models.Restaurant.objects.filter(pk=value).exists():
+            raise NotFound(detail=f'Restaurant with id={value} was not found')
+        return queryset.filter(restaurant_id=value)
+
     def filter_station(self, queryset: QuerySet, name: str, value: str | int) -> QuerySet | list:
         restaurant_ids = (
             models.RestaurantStation.objects
@@ -85,16 +90,24 @@ class DishFilterSet(django_filters.FilterSet):
 
 
 class RestaurantFilterSet(django_filters.FilterSet):
-    ranking = django_filters.ChoiceFilter(method='filter_ranking', label='Ranking.', choices=enums.RankingEnum.choices)
+    category = django_filters.NumberFilter(field_name='category', label='Category.')
+    is_active = django_filters.BooleanFilter(field_name='is_active', label='Active restaurant.')
     num_of_reviews = django_filters.ChoiceFilter(
         method='filter_num_of_reviews', label='Number of reviews.', choices=enums.NumOfReviewsEnum.choices,
     )
-    is_active = django_filters.BooleanFilter(field_name='is_active', label='Active restaurant.')
-    category = django_filters.NumberFilter(field_name='category', label='Category.')
+    ranking = django_filters.ChoiceFilter(method='filter_ranking', label='Ranking.', choices=enums.RankingEnum.choices)
 
     class Meta:
         model = models.Restaurant
         fields = ['is_active', 'category']
+
+    def filter_num_of_reviews(self, queryset: QuerySet, name: str, value: str) -> QuerySet:
+        first, second = value.split('-')
+        if first and second:
+            queryset = queryset.filter(num_of_reviews__gte=first, num_of_reviews__lte=second)
+        if first and not second:
+            queryset = queryset.filter(num_of_reviews__gte=first)
+        return queryset
 
     def filter_ranking(self, queryset: QuerySet, name: str, value: str) -> QuerySet:
         value_split = value.split('-')
@@ -105,14 +118,6 @@ class RestaurantFilterSet(django_filters.FilterSet):
             )
         except IndexError:
             queryset = queryset.filter(ranking=value_split[0])
-        return queryset
-
-    def filter_num_of_reviews(self, queryset: QuerySet, name: str, value: str) -> QuerySet:
-        first, second = value.split('-')
-        if first and second:
-            queryset = queryset.filter(num_of_reviews__gte=first, num_of_reviews__lte=second)
-        if first and not second:
-            queryset = queryset.filter(num_of_reviews__gte=first)
         return queryset
 
 

@@ -4,6 +4,7 @@ import factory
 from factory import fuzzy
 
 from restaurant.enums import WeightEnum
+from restaurant.services import DishClassifier
 
 
 class CategoryFactory(factory.django.DjangoModelFactory):
@@ -51,22 +52,10 @@ class RestaurantFactory(factory.django.DjangoModelFactory):
 
     @classmethod
     def as_payload(cls, **kwargs: Any) -> dict[str, Any]:
-        obj = cls.build(**kwargs)
-        return {
-            'name': obj.name,
-            'category': obj.category.name,
-            'city': obj.city.name,
-            'address': obj.address,
-            'phone_number': obj.phone_number,
-            'restaurant_url': obj.restaurant_url,
-            'menu_url': obj.menu_url,
-            'ranking': obj.ranking,
-            'num_of_reviews': obj.num_of_reviews,
-            'latitude': obj.latitude,
-            'longitude': obj.longitude,
-            'comment': obj.comment,
-            'is_active': obj.is_active,
-        }
+        data = factory.build(dict, FACTORY_CLASS=cls, **kwargs)
+        data['category'] = data.pop('category').name
+        data['city'] = data.pop('city').name
+        return data
 
 
 class DishFactory(factory.django.DjangoModelFactory):
@@ -90,7 +79,10 @@ class DishFactory(factory.django.DjangoModelFactory):
             for tag in extracted:
                 self.tags.add(tag)
         else:
-            self.tags.add(TagFactory())
+            tag_names = DishClassifier(self).classify_dish()
+            for tag_name in tag_names:
+                tag = TagFactory.create(name=tag_name)
+                self.tags.add(tag)
 
     @classmethod
     def as_payload(cls, **kwargs: Any) -> dict[str, Any]:
