@@ -15,6 +15,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
+## [1.3.1] - 2025-12-05
+
+### Added
+
+- Admin permissions ([#41](https://github.com/kooznitsa/sampo/pull/41)).
+
 ## [1.3.0] - 2025-12-04
 
 ### Added
