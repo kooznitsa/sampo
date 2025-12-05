@@ -75,6 +75,14 @@ class RestaurantAdmin(admin.ModelAdmin):
     search_fields = ('name', 'menu_url')
     search_help_text = 'Поиск по полям «Название ресторана» и «Сайт меню»'
 
+    def get_actions(self, request: HttpRequest) -> dict:
+        actions = super().get_actions(request)
+        if not request.user.is_superuser:
+            restricted_actions = {'update_restaurant', 'update_menu', 'create_stations'}
+            for action in restricted_actions:
+                actions.pop(action, None)
+        return actions
+
     def get_queryset(self, request: HttpRequest) -> QuerySet:
         queryset = super().get_queryset(request)
         if request.resolver_match.url_name == 'restaurant_restaurant_changelist':
@@ -170,6 +178,12 @@ class DishAdmin(admin.ModelAdmin):
     list_select_related = ('restaurant',)
     search_fields = ('name', 'restaurant__pk')
     search_help_text = 'Поиск по полям «Название блюда» и «ID ресторана»'
+
+    def get_actions(self, request: HttpRequest) -> dict:
+        actions = super().get_actions(request)
+        if not request.user.is_superuser:
+            actions.pop('create_tags', None)
+        return actions
 
     def get_search_results(self, request: HttpRequest, queryset: QuerySet, search_term: str) -> tuple[QuerySet, bool]:
         if not search_term:
