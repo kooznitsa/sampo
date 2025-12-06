@@ -31,10 +31,11 @@ DATABASES = {
 
 # SECURITY
 
-CSRF_COOKIE_SECURE = True
-SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = False
+SESSION_COOKIE_SECURE = False
 
 CSRF_TRUSTED_ORIGINS = [
+    f'http://{env.str("IP_ADDRESS")}',
     f'http://{env.str("IP_ADDRESS")}:1337',
 ]
 
