@@ -35,6 +35,18 @@ class SlugRelatedFieldWithCreate(SlugRelatedField):
         return obj
 
 
+class RestaurantStationSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField(source='station.id', read_only=True)
+    name = serializers.CharField(source='station.name')
+    line = serializers.CharField(source='station.line')
+    latitude = serializers.FloatField(source='station.latitude')
+    longitude = serializers.FloatField(source='station.longitude')
+
+    class Meta:
+        model = models.RestaurantStation
+        fields = ('id', 'name', 'line', 'latitude', 'longitude', 'distance_km')
+
+
 class RestaurantSerializer(serializers.ModelSerializer):
     category = SlugRelatedFieldWithCreate(slug_field='name', queryset=models.Category.objects.all(), required=False)
     city = SlugRelatedFieldWithCreate(slug_field='name', queryset=geodata_models.City.objects.all())
@@ -82,16 +94,7 @@ class RestaurantSerializer(serializers.ModelSerializer):
 
     def get_nearest_stations(self, instance: models.Restaurant) -> list[dict] | None:
         if instance.nearest_stations:
-            return [
-                {
-                    'name': rel.station.name,
-                    'line': rel.station.line,
-                    'latitude': rel.station.latitude,
-                    'longitude': rel.station.longitude,
-                    'distance_km': rel.distance_km,
-                }
-                for rel in instance.nearest_stations
-            ]
+            return RestaurantStationSerializer(instance.nearest_stations, many=True).data
         return None
 
 

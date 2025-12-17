@@ -34,10 +34,10 @@ DATABASES = {
 CSRF_COOKIE_SECURE = False
 SESSION_COOKIE_SECURE = False
 
-CSRF_TRUSTED_ORIGINS = [
+CSRF_TRUSTED_ORIGINS = (
     f'http://{env.str("IP_ADDRESS")}',
     f'http://{env.str("IP_ADDRESS")}:1337',
-]
+)
 
 CORS_ALLOWED_ORIGINS = [
     'http://localhost:5173',
